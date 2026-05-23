@@ -7,6 +7,8 @@ import QuoteCard from "@/components/QuoteCard";
 import PriceChart from "@/components/PriceChart";
 import SuggestionCard from "@/components/SuggestionCard";
 import WatchlistInput from "@/components/WatchlistInput";
+import { useAuth } from "@/components/AuthProvider";
+import { useRouter } from "next/navigation";
 
 const Spinner = ({ text }: { text: string }) => {
   const [dots, setDots] = useState(".");
@@ -22,9 +24,8 @@ const Spinner = ({ text }: { text: string }) => {
   );
 };
 
-const STORAGE_KEY = "ma_k";
 const DIGEST_PREFS_KEY = "ma_digest";
-const SALT = "market-analytics-v1";
+const SALT = "market-analytics-v1"; // legacy local-only obfuscation (kept for digest prefs only)
 
 interface DigestPrefs {
   enabled: boolean;
@@ -147,46 +148,22 @@ const DigestSetupModal = ({
   );
 };
 
-function encryptKey(raw: string): string {
-  const encoded = Array.from(raw).map((c, i) =>
-    (c.charCodeAt(0) ^ SALT.charCodeAt(i % SALT.length)).toString(16).padStart(2, "0")
-  ).join("");
-  return btoa(encoded);
-}
+// API key is now stored encrypted in Supabase via /api/user/settings
+// These are kept only as a no-op fallback shape so callers don't break during migration
+function saveKey(_raw: string) {}
+function clearKey() {}
 
-function decryptKey(stored: string): string {
-  try {
-    const encoded = atob(stored);
-    const bytes = encoded.match(/.{2}/g) ?? [];
-    return bytes.map((b, i) =>
-      String.fromCharCode(parseInt(b, 16) ^ SALT.charCodeAt(i % SALT.length))
-    ).join("");
-  } catch { return ""; }
-}
-
-function loadSavedKey(): string {
-  try { const v = localStorage.getItem(STORAGE_KEY); return v ? decryptKey(v) : ""; }
-  catch { return ""; }
-}
-
-function saveKey(raw: string) {
-  try { localStorage.setItem(STORAGE_KEY, encryptKey(raw)); } catch {}
-}
-
-function clearKey() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
-}
-
-const ApiKeyModal = ({ onSave, onSkip }: { onSave: (key: string) => void; onSkip: () => void }) => {
+const ApiKeyModal = ({ onSave, onSkip, savedKey }: { onSave: (key: string) => void; onSkip: () => void; savedKey?: string }) => {
   const [step, setStep] = useState<"choose" | "enter">("choose");
-  const [val, setVal] = useState(() => loadSavedKey());
+  const [val, setVal] = useState(savedKey ?? "");
   const [remember, setRemember] = useState(true);
-  const hasSaved = !!loadSavedKey();
+  const hasSaved = !!(savedKey);
   const valid = val.startsWith("sk-");
 
   const handleUseKey = () => {
     if (!valid) return;
-    if (remember) saveKey(val); else clearKey();
+    // remember flag — callers handle DB persistence; clear local stub if unchecked
+    if (!remember) clearKey();
     onSave(val);
   };
 
@@ -254,6 +231,9 @@ const AnalyzeButton = ({ onClick, loading, disabled }: { onClick: () => void; lo
 );
 
 export default function Dashboard() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const router = useRouter();
+
   const [symbols, setSymbols] = useState<string[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("");
@@ -263,9 +243,9 @@ export default function Dashboard() {
   const [analysisStage, setAnalysisStage] = useState("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string>(() => loadSavedKey());
+  const [apiKey, setApiKey] = useState<string>("");
   const [showKeyModal, setShowKeyModal] = useState(false);
-  const [keyDecided, setKeyDecided] = useState(() => !!loadSavedKey());
+  const [keyDecided, setKeyDecided] = useState(false);
   const [moversOpen, setMoversOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"market" | "analysis">("market");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -273,7 +253,50 @@ export default function Dashboard() {
   const [pendingEmailDigest, setPendingEmailDigest] = useState(false);
   const [digestPrefs, setDigestPrefs] = useState<DigestPrefs | null>(() => loadDigestPrefs());
   const [showDigestSetup, setShowDigestSetup] = useState(false);
+  const [dbLoaded, setDbLoaded] = useState(false);
   const prevWatchlistRef = useRef<string[]>([]);
+  const watchlistSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Redirect unauthenticated users after auth finishes loading
+  useEffect(() => {
+    if (!authLoading && !user) router.replace("/login");
+  }, [authLoading, user, router]);
+
+  // Load watchlist + settings from DB on sign-in
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      fetch("/api/user/watchlist").then(r => r.json()),
+      fetch("/api/user/settings").then(r => r.json()),
+    ]).then(([watchlistData, settingsData]) => {
+      if (Array.isArray(watchlistData.symbols) && watchlistData.symbols.length > 0) {
+        setSymbols(watchlistData.symbols);
+      } else {
+        setSymbols(DEFAULT_WATCHLIST);
+      }
+      if (settingsData.anthropicKey) {
+        setApiKey(settingsData.anthropicKey);
+        setKeyDecided(true);
+      }
+      setDbLoaded(true);
+    }).catch(() => {
+      setSymbols(DEFAULT_WATCHLIST);
+      setDbLoaded(true);
+    });
+  }, [user]);
+
+  // Debounced watchlist sync to DB
+  const syncWatchlist = useCallback((syms: string[]) => {
+    if (!user) return;
+    if (watchlistSyncRef.current) clearTimeout(watchlistSyncRef.current);
+    watchlistSyncRef.current = setTimeout(() => {
+      fetch("/api/user/watchlist", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbols: syms }),
+      }).catch(() => {});
+    }, 800);
+  }, [user]);
 
   const fetchQuotes = useCallback(async () => {
     if (symbols.length === 0) { setQuotes([]); return; }
@@ -289,7 +312,11 @@ export default function Dashboard() {
       // Auto-correct symbols (e.g. XEQT → XEQT.TO)
       const resolved: Record<string, string> = data.resolved ?? {};
       if (Object.keys(resolved).length > 0) {
-        setSymbols(prev => prev.map(s => resolved[s] ?? s));
+        setSymbols(prev => {
+          const updated = prev.map(s => resolved[s] ?? s);
+          syncWatchlist(updated);
+          return updated;
+        });
       }
 
       const returned = new Set((data.quotes as Quote[]).map(q => q.symbol));
@@ -396,13 +423,24 @@ export default function Dashboard() {
     }
   };
 
+  const persistSettings = useCallback((key: string, mode: string) => {
+    if (!user) return;
+    fetch("/api/user/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ anthropicKey: key, analysisMode: mode }),
+    }).catch(() => {});
+  }, [user]);
+
   const onModalSave = (key: string) => {
     setApiKey(key); setKeyDecided(true); setShowKeyModal(false);
+    persistSettings(key, "claude");
     if (pendingEmailDigest) { setPendingEmailDigest(false); sendEmailDigest(key); }
     else runAnalysis(key);
   };
   const onModalSkip = () => {
     setApiKey(""); setKeyDecided(true); setShowKeyModal(false);
+    persistSettings("", "rule-based");
     if (pendingEmailDigest) { setPendingEmailDigest(false); sendEmailDigest(""); }
     else runAnalysis("");
   };
@@ -410,6 +448,15 @@ export default function Dashboard() {
 
   const gainers = [...quotes].filter(q => q.changePercent > 0).sort((a, b) => b.changePercent - a.changePercent).slice(0, 3);
   const losers  = [...quotes].filter(q => q.changePercent < 0).sort((a, b) => a.changePercent - b.changePercent).slice(0, 3);
+
+  if (authLoading || !user || !dbLoaded) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#050505" }}>
+        <div style={{ width: "32px", height: "32px", border: "2px solid #111", borderTop: "2px solid #00ff88", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="app-root">
@@ -496,7 +543,7 @@ export default function Dashboard() {
         }
       `}</style>
 
-      {showKeyModal && <ApiKeyModal onSave={onModalSave} onSkip={onModalSkip} />}
+      {showKeyModal && <ApiKeyModal onSave={onModalSave} onSkip={onModalSkip} savedKey={apiKey} />}
       {showDigestSetup && !showKeyModal && (
         <DigestSetupModal
           initialSymbols={symbols}
@@ -518,8 +565,24 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="header-right">
+            {/* User avatar + sign out */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {user.user_metadata?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.user_metadata.avatar_url} alt="avatar"
+                  style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1px solid #1a1a1a" }} />
+              ) : (
+                <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#001a0d", border: "1px solid #00ff8830", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem", color: "#00ff88" }}>
+                  {(user.email ?? "?")[0].toUpperCase()}
+                </div>
+              )}
+              <button onClick={signOut}
+                style={{ fontSize: "0.62rem", color: "#333", background: "transparent", border: "1px solid #1a1a1a", padding: "5px 9px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer" }}>
+                sign out
+              </button>
+            </div>
             {keyDecided && (
-              <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); }}
+              <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); persistSettings("", "rule-based"); }}
                 style={{ fontSize: "0.65rem", color: apiKey.trim() ? "#1f4a2e" : "#333", background: "transparent", border: `1px solid ${apiKey.trim() ? "#0a2a14" : "#1a1a1a"}`, padding: "6px 10px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer", whiteSpace: "nowrap" }}>
                 {apiKey.trim() ? "◈ Claude AI" : "◈ Rule-based"}
               </button>
@@ -546,7 +609,7 @@ export default function Dashboard() {
         <div className="layout">
           {/* ── Desktop sidebar ── */}
           <aside className="sidebar">
-            <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
+            <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); syncWatchlist(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
             {quotes.length > 0 && (
               <div style={{ border: "1px solid #1a1a1a", background: "#080808", padding: "16px" }}>
                 <div style={{ fontSize: "0.72rem", color: "#555", letterSpacing: "1px", marginBottom: "12px" }}>◈ Top Movers</div>
@@ -576,7 +639,7 @@ export default function Dashboard() {
 
             {/* Mobile: watchlist + analyze button at top */}
             <div style={{ display: "none" }} className="mobile-watchlist-wrapper">
-              <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
+              <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); syncWatchlist(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
             </div>
             <div className="mobile-analyze">
               <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
