@@ -60,19 +60,21 @@ export default function LandingPage() {
       `}</style>
 
       {/* Nav */}
-      <nav className="nav-root" style={{ borderBottom: "1px solid #0f0f0f", padding: "12px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "#050505e6", backdropFilter: "blur(12px)", zIndex: 10 }}>
-        <div style={{ fontFamily: bebas, fontSize: "1.3rem", letterSpacing: "4px", color: "#fff" }}>
-          MARKET<span style={{ color: "#00ff88" }}> ANALYTICS</span>
-        </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button className="nav-signin" onClick={() => router.push("/login")}
-            style={{ background: "transparent", border: "none", color: "#444", padding: "6px 14px", fontFamily: mono, fontSize: "0.70rem", letterSpacing: "1px", cursor: "pointer" }}>
-            Sign In
-          </button>
-          <button onClick={() => router.push("/login")}
-            style={{ background: "#00ff88", border: "none", color: "#001a0d", padding: "7px 16px", fontFamily: mono, fontWeight: "700", fontSize: "0.70rem", letterSpacing: "1px", cursor: "pointer" }}>
-            Get Started →
-          </button>
+      <nav className="nav-root" style={{ borderBottom: "1px solid #0f0f0f", position: "sticky", top: 0, background: "#050505e6", backdropFilter: "blur(12px)", zIndex: 10 }}>
+        <div style={{ maxWidth: "960px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontFamily: bebas, fontSize: "1.3rem", letterSpacing: "4px", color: "#fff" }}>
+            MARKET<span style={{ color: "#00ff88" }}> ANALYTICS</span>
+          </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button className="nav-signin" onClick={() => router.push("/login")}
+              style={{ background: "transparent", border: "none", color: "#444", padding: "6px 14px", fontFamily: mono, fontSize: "0.70rem", letterSpacing: "1px", cursor: "pointer" }}>
+              Sign In
+            </button>
+            <button onClick={() => router.push("/login")}
+              style={{ background: "#00ff88", border: "none", color: "#001a0d", padding: "7px 16px", fontFamily: mono, fontWeight: "700", fontSize: "0.70rem", letterSpacing: "1px", cursor: "pointer" }}>
+              Get Started →
+            </button>
+          </div>
         </div>
       </nav>
 
