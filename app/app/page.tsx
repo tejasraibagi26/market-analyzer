@@ -189,10 +189,10 @@ const DigestSetupModal = ({
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
           {FREQUENCIES.map(f => (
-            <button key={f.daySpec} onClick={() => setSelectedFreq(f)}
-              style={{ ...btnSecondary, border: `1px solid ${selectedFreq.daySpec === f.daySpec ? "#00ff88" : "#1a1a1a"}`, color: selectedFreq.daySpec === f.daySpec ? "#00ff88" : "#555", background: selectedFreq.daySpec === f.daySpec ? "#001a0d" : "transparent" }}>
+            <button key={f.label} onClick={() => setSelectedFreq(f)}
+              style={{ ...btnSecondary, border: `1px solid ${selectedFreq.label === f.label ? "#00ff88" : "#1a1a1a"}`, color: selectedFreq.label === f.label ? "#00ff88" : "#555", background: selectedFreq.label === f.label ? "#001a0d" : "transparent" }}>
               <span>{f.label}</span>
-              {selectedFreq.daySpec === f.daySpec && <span>◈</span>}
+              {selectedFreq.label === f.label && <span>◈</span>}
             </button>
           ))}
           {isCustom && (
