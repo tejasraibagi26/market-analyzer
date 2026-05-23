@@ -522,7 +522,7 @@ export default function Dashboard() {
         .app-root > footer { flex-shrink: 0; }
 
         .header-inner {
-          max-width: 1400px; margin: 0 auto; padding: 14px 24px;
+          max-width: 75vw; margin: 0 auto; padding: 14px 24px;
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
         }
         .header-left  { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; overflow: hidden; }
@@ -531,7 +531,7 @@ export default function Dashboard() {
         .header-tag   { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .main-inner {
-          max-width: 1400px; margin: 0 auto; padding: 20px 24px; width: 100%;
+          max-width: 75vw; margin: 0 auto; padding: 20px 24px; width: 100%;
           flex: 1; overflow-y: auto; overflow-x: clip;
         }
         .main-scroll-wrapper { flex: 1; overflow-y: auto; overflow-x: clip; }
@@ -569,8 +569,8 @@ export default function Dashboard() {
         @media (max-width: 768px) {
           .header-sub { display: none; }
           .header-tag { display: none; }
-          .header-inner { padding: 12px 16px; }
-          .main-inner { padding: 10px 12px; }
+          .header-inner { padding: 12px 16px; max-width: 100%; }
+          .main-inner { padding: 10px 12px; max-width: 100%; }
 
           .layout { grid-template-columns: 1fr; }
           .layout > aside { display: none; }

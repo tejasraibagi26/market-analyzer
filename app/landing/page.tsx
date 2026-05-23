@@ -50,23 +50,27 @@ export default function LandingPage() {
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+        .features-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #111; }
+        .nav-signin { display: inline-block; }
+        @media (max-width: 768px) {
+          .features-grid { grid-template-columns: 1fr; }
+          .nav-signin { display: none; }
+          .nav-root { padding: 10px 16px !important; }
+        }
       `}</style>
 
       {/* Nav */}
-      <nav style={{ borderBottom: "1px solid #111", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "#050505cc", backdropFilter: "blur(8px)", zIndex: 10 }}>
-        <div>
-          <div style={{ fontSize: "0.58rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "2px" }}>◈ Technical Analysis</div>
-          <div style={{ fontFamily: bebas, fontSize: "1.4rem", letterSpacing: "4px", background: "linear-gradient(135deg,#fff 0%,#555 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            MARKET<span style={{ WebkitTextFillColor: "#00ff88" }}> ANALYTICS</span>
-          </div>
+      <nav className="nav-root" style={{ borderBottom: "1px solid #0f0f0f", padding: "12px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "#050505e6", backdropFilter: "blur(12px)", zIndex: 10 }}>
+        <div style={{ fontFamily: bebas, fontSize: "1.3rem", letterSpacing: "4px", color: "#fff" }}>
+          MARKET<span style={{ color: "#00ff88" }}> ANALYTICS</span>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => router.push("/login")}
-            style={{ background: "transparent", border: "1px solid #1a1a1a", color: "#555", padding: "8px 16px", fontFamily: mono, fontSize: "0.72rem", letterSpacing: "1px", cursor: "pointer" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <button className="nav-signin" onClick={() => router.push("/login")}
+            style={{ background: "transparent", border: "none", color: "#444", padding: "6px 14px", fontFamily: mono, fontSize: "0.70rem", letterSpacing: "1px", cursor: "pointer" }}>
             Sign In
           </button>
           <button onClick={() => router.push("/login")}
-            style={{ background: "#00ff88", border: "none", color: "#001a0d", padding: "8px 16px", fontFamily: mono, fontWeight: "700", fontSize: "0.72rem", letterSpacing: "1px", cursor: "pointer" }}>
+            style={{ background: "#00ff88", border: "none", color: "#001a0d", padding: "7px 16px", fontFamily: mono, fontWeight: "700", fontSize: "0.70rem", letterSpacing: "1px", cursor: "pointer" }}>
             Get Started →
           </button>
         </div>
@@ -84,9 +88,9 @@ export default function LandingPage() {
       </div>
 
       {/* Hero */}
+      <div style={{ backgroundImage: "radial-gradient(ellipse at 15% 0%, #001a0d88 0%, transparent 55%), radial-gradient(ellipse at 85% 80%, #0a0a1a66 0%, transparent 55%)" }}>
       <section style={{
         maxWidth: "960px", margin: "0 auto", padding: "80px 24px 64px",
-        backgroundImage: "radial-gradient(ellipse at 10% 0%,#001a0d 0%,transparent 50%), radial-gradient(ellipse at 90% 100%,#0a0a1a 0%,transparent 50%)",
         animation: "fadeUp 0.6s ease",
       }}>
         <div style={{ fontSize: "0.65rem", color: "#00ff88", letterSpacing: "4px", marginBottom: "20px" }}>◈ AI-POWERED MARKET INTELLIGENCE</div>
@@ -129,6 +133,7 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+      </div>
 
       {/* Dashboard preview placeholder */}
       <section style={{ maxWidth: "960px", margin: "0 auto 64px", padding: "0 24px" }}>
@@ -173,7 +178,7 @@ export default function LandingPage() {
         <div style={{ fontSize: "0.62rem", color: "#00ff88", letterSpacing: "4px", marginBottom: "8px" }}>◈ WHAT YOU GET</div>
         <div style={{ fontFamily: bebas, fontSize: "clamp(1.8rem,5vw,3rem)", letterSpacing: "4px", color: "#fff", marginBottom: "40px" }}>BUILT FOR TRADERS</div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1px", background: "#111" }}>
+        <div className="features-grid">
           {FEATURES.map(f => (
             <div key={f.title} style={{ background: "#080808", padding: "28px 24px" }}>
               <div style={{ fontSize: "0.60rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "10px" }}>{f.tag}</div>
