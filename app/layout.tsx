@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   title: "Market Analytics",
   description: "AI-powered stock and ETF analysis dashboard",
   icons: {
-    icon: "/icon.svg",
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icon.svg",
     apple: "/icon.svg",
   },
 };

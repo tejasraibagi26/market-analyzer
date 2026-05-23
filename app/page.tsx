@@ -259,7 +259,7 @@ export default function Dashboard() {
 
   // Redirect unauthenticated users after auth finishes loading
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
+    if (!authLoading && !user) router.replace("/landing");
   }, [authLoading, user, router]);
 
   // Load watchlist + settings from DB on sign-in
