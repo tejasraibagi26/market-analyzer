@@ -29,8 +29,9 @@ const SALT = "market-analytics-v1"; // legacy local-only obfuscation (kept for d
 
 interface DigestPrefs {
   enabled: boolean;
-  frequency: string;   // cron expression
+  frequency: string;   // cron expression (UTC)
   frequencyLabel: string;
+  timezone: string;    // IANA timezone, e.g. "America/New_York"
   sameOnChange: boolean;
   watchlist: string[]; // snapshot at time of setup
 }
@@ -48,14 +49,45 @@ function clearDigestPrefs() {
   try { localStorage.removeItem(DIGEST_PREFS_KEY); } catch {}
 }
 
+// Preset frequencies use local hours; cron is built at schedule time after UTC conversion.
 const FREQUENCIES = [
-  { label: "Daily at 9am",    cron: "0 9 * * *",   short: "Daily 9am" },
-  { label: "Daily at 5pm",    cron: "0 17 * * *",  short: "Daily 5pm" },
-  { label: "Weekdays at 8am", cron: "0 8 * * 1-5", short: "Weekdays 8am" },
-  { label: "Weekly Monday",   cron: "0 9 * * 1",   short: "Weekly Mon" },
-  { label: "Weekly Friday",   cron: "0 17 * * 5",  short: "Weekly Fri" },
-  { label: "Custom",          cron: "custom",       short: "Custom" },
+  { label: "Daily at 9am",    localHour: 9,  localMinute: 0, daySpec: "* * *",   short: "Daily 9am" },
+  { label: "Daily at 5pm",    localHour: 17, localMinute: 0, daySpec: "* * *",   short: "Daily 5pm" },
+  { label: "Weekdays at 8am", localHour: 8,  localMinute: 0, daySpec: "* * 1-5", short: "Weekdays 8am" },
+  { label: "Weekly Monday",   localHour: 9,  localMinute: 0, daySpec: "* * 1",   short: "Weekly Mon" },
+  { label: "Weekly Friday",   localHour: 17, localMinute: 0, daySpec: "* * 5",   short: "Weekly Fri" },
+  { label: "Custom",          localHour: -1, localMinute: 0, daySpec: "custom",  short: "Custom" },
+] as const;
+
+type Frequency = typeof FREQUENCIES[number];
+
+const TIMEZONES = [
+  { label: "UTC",              iana: "UTC",                    offset: 0 },
+  { label: "EST (UTC-5)",      iana: "America/New_York",       offset: -5 },
+  { label: "CST (UTC-6)",      iana: "America/Chicago",        offset: -6 },
+  { label: "MST (UTC-7)",      iana: "America/Denver",         offset: -7 },
+  { label: "PST (UTC-8)",      iana: "America/Los_Angeles",    offset: -8 },
+  { label: "IST (UTC+5:30)",   iana: "Asia/Kolkata",           offset: 5.5 },
+  { label: "CET (UTC+1)",      iana: "Europe/Paris",           offset: 1 },
+  { label: "GMT (UTC+0)",      iana: "Europe/London",          offset: 0 },
+  { label: "JST (UTC+9)",      iana: "Asia/Tokyo",             offset: 9 },
+  { label: "AEST (UTC+10)",    iana: "Australia/Sydney",       offset: 10 },
 ];
+
+// Convert local hour/minute to UTC hour/minute given a timezone offset (may include .5 for IST)
+function localToUtc(localHour: number, localMinute: number, offset: number): { utcHour: number; utcMinute: number } {
+  const totalLocalMins = localHour * 60 + localMinute;
+  const offsetMins = Math.round(offset * 60);
+  let totalUtcMins = totalLocalMins - offsetMins;
+  // Wrap within [0, 1440)
+  totalUtcMins = ((totalUtcMins % 1440) + 1440) % 1440;
+  return { utcHour: Math.floor(totalUtcMins / 60), utcMinute: totalUtcMins % 60 };
+}
+
+function buildPresetCron(freq: Frequency, tzOffset: number): string {
+  const { utcHour, utcMinute } = localToUtc(freq.localHour, freq.localMinute, tzOffset);
+  return `${utcMinute} ${utcHour} ${freq.daySpec}`;
+}
 
 const DAYS = [
   { label: "M", name: "Mon", value: 1 },
@@ -67,23 +99,24 @@ const DAYS = [
   { label: "S", name: "Sun", value: 0 },
 ];
 
-function buildCustomCron(selectedDays: number[], timeStr: string): { cron: string; label: string } | null {
+function buildCustomCron(selectedDays: number[], timeStr: string, tzOffset: number): { cron: string; label: string } | null {
   if (selectedDays.length === 0) return null;
   const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
   if (!match) return null;
-  let hour = parseInt(match[1], 10);
-  const minute = parseInt(match[2], 10);
+  let localHour = parseInt(match[1], 10);
+  const localMinute = parseInt(match[2], 10);
   const meridiem = match[3]?.toLowerCase();
-  if (meridiem === "pm" && hour < 12) hour += 12;
-  if (meridiem === "am" && hour === 12) hour = 0;
-  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  if (meridiem === "pm" && localHour < 12) localHour += 12;
+  if (meridiem === "am" && localHour === 12) localHour = 0;
+  if (localHour < 0 || localHour > 23 || localMinute < 0 || localMinute > 59) return null;
 
+  const { utcHour, utcMinute } = localToUtc(localHour, localMinute, tzOffset);
   const sorted = [...selectedDays].sort((a, b) => a - b);
   const dayStr = sorted.join(",");
-  const cron = `${minute} ${hour} * * ${dayStr}`;
+  const cron = `${utcMinute} ${utcHour} * * ${dayStr}`;
 
   const dayNames = sorted.map(v => DAYS.find(d => d.value === v)?.name ?? "").join(", ");
-  const timeLabel = `${hour % 12 === 0 ? 12 : hour % 12}:${String(minute).padStart(2, "0")}${hour < 12 ? "am" : "pm"}`;
+  const timeLabel = `${localHour % 12 === 0 ? 12 : localHour % 12}:${String(localMinute).padStart(2, "0")}${localHour < 12 ? "am" : "pm"}`;
   const label = `${dayNames} at ${timeLabel}`;
 
   return { cron, label };
@@ -97,14 +130,18 @@ const DigestSetupModal = ({
   initialSymbols: string[];
 }) => {
   const [step, setStep] = useState<"consent" | "frequency" | "onChange">("consent");
-  const [selectedFreq, setSelectedFreq] = useState(FREQUENCIES[0]);
+  const [selectedFreq, setSelectedFreq] = useState<typeof FREQUENCIES[number]>(FREQUENCIES[0]);
   const [customDays, setCustomDays] = useState<number[]>([]);
   const [customTime, setCustomTime] = useState("09:00");
   const [sameOnChange, setSameOnChange] = useState<boolean | null>(null);
+  const [selectedTz, setSelectedTz] = useState(() => {
+    const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return TIMEZONES.find(t => t.iana === browserTz) ?? TIMEZONES[0];
+  });
 
-  const isCustom = selectedFreq.cron === "custom";
-  const customResult = isCustom ? buildCustomCron(customDays, customTime) : null;
-  const effectiveCron = isCustom ? (customResult?.cron ?? "") : selectedFreq.cron;
+  const isCustom = selectedFreq.daySpec === "custom";
+  const customResult = isCustom ? buildCustomCron(customDays, customTime, selectedTz.offset) : null;
+  const effectiveCron = isCustom ? (customResult?.cron ?? "") : buildPresetCron(selectedFreq, selectedTz.offset);
   const effectiveLabel = isCustom ? (customResult?.label ?? "Custom") : selectedFreq.label;
   const effectiveShort = isCustom ? (customResult?.label ?? "Custom") : selectedFreq.short;
   const canContinue = isCustom ? customResult !== null : true;
@@ -142,12 +179,25 @@ const DigestSetupModal = ({
         <button onClick={() => setStep("consent")} style={{ background: "transparent", border: "none", color: "#444", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: "pointer", padding: "0 0 16px 0", letterSpacing: "1px" }}>← Back</button>
         <div style={labelStyle}>◈ FREQUENCY</div>
         <div style={titleStyle}>HOW OFTEN?</div>
+        {/* Timezone selector */}
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "6px" }}>TIMEZONE</div>
+          <select
+            value={selectedTz.iana}
+            onChange={e => setSelectedTz(TIMEZONES.find(t => t.iana === e.target.value) ?? TIMEZONES[0])}
+            style={{ width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#ccc", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", padding: "10px 14px", outline: "none", letterSpacing: "0.5px", colorScheme: "dark", cursor: "pointer" }}
+          >
+            {TIMEZONES.map(tz => (
+              <option key={tz.iana} value={tz.iana}>{tz.label}</option>
+            ))}
+          </select>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
           {FREQUENCIES.map(f => (
-            <button key={f.cron} onClick={() => setSelectedFreq(f)}
-              style={{ ...btnSecondary, border: `1px solid ${selectedFreq.cron === f.cron ? "#00ff88" : "#1a1a1a"}`, color: selectedFreq.cron === f.cron ? "#00ff88" : "#555", background: selectedFreq.cron === f.cron ? "#001a0d" : "transparent" }}>
+            <button key={f.daySpec} onClick={() => setSelectedFreq(f)}
+              style={{ ...btnSecondary, border: `1px solid ${selectedFreq.daySpec === f.daySpec ? "#00ff88" : "#1a1a1a"}`, color: selectedFreq.daySpec === f.daySpec ? "#00ff88" : "#555", background: selectedFreq.daySpec === f.daySpec ? "#001a0d" : "transparent" }}>
               <span>{f.label}</span>
-              {selectedFreq.cron === f.cron && <span>◈</span>}
+              {selectedFreq.daySpec === f.daySpec && <span>◈</span>}
             </button>
           ))}
           {isCustom && (
@@ -164,7 +214,7 @@ const DigestSetupModal = ({
                   );
                 })}
               </div>
-              <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "8px" }}>TIME (UTC)</div>
+              <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "8px" }}>TIME</div>
               <input
                 type="time"
                 value={customTime}
@@ -173,7 +223,7 @@ const DigestSetupModal = ({
               />
               {customResult && (
                 <div style={{ fontSize: "0.65rem", color: "#00ff8866", marginTop: "10px", letterSpacing: "0.5px" }}>
-                  ◈ {customResult.label}
+                  ◈ {customResult.label} {selectedTz.label}
                 </div>
               )}
             </div>
@@ -212,7 +262,8 @@ const DigestSetupModal = ({
             onSave({
               enabled: true,
               frequency: effectiveCron,
-              frequencyLabel: effectiveLabel,
+              frequencyLabel: `${effectiveLabel} (${selectedTz.label})`,
+              timezone: selectedTz.iana,
               sameOnChange: sameOnChange!,
               watchlist: initialSymbols,
             });
@@ -714,9 +765,9 @@ export default function Dashboard() {
               {user.user_metadata?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.user_metadata.avatar_url} alt="avatar"
-                  style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1px solid #1a1a1a", marginRight: "4px" }} />
+                  style={{ width: "32px", height: "32px", border: "1px solid #1e1e1e", marginRight: "4px", objectFit: "cover" }} />
               ) : (
-                <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88", marginRight: "4px" }}>
+                <div style={{ width: "32px", height: "32px", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88", marginRight: "4px" }}>
                   {(user.email ?? "?")[0].toUpperCase()}
                 </div>
               )}

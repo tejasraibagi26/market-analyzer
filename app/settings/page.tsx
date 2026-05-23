@@ -13,6 +13,7 @@ interface DigestPrefs {
   enabled: boolean;
   frequency: string;
   frequencyLabel: string;
+  timezone?: string;
   sameOnChange: boolean;
   watchlist: string[];
 }
@@ -91,7 +92,7 @@ export default function SettingsPage() {
 
       {/* Header */}
       <header style={{ borderBottom: "1px solid #0e0e0e" }}>
-        <div style={{ maxWidth: "640px", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+        <div style={{ maxWidth: "75vw", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <button onClick={() => router.push("/app")}
               style={{ background: "transparent", border: "none", color: "#333", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer", letterSpacing: "1px", padding: 0 }}
@@ -124,7 +125,7 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: "640px", margin: "0 auto", padding: "32px 24px" }}>
+      <main style={{ maxWidth: "75vw", margin: "0 auto", padding: "32px 24px" }}>
 
         {/* Account */}
         <section>
