@@ -33,7 +33,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("market_user_settings")
-    .select("anthropic_key_enc, analysis_mode")
+    .select("anthropic_key_enc, analysis_mode, digest_prefs")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -47,6 +47,7 @@ export async function GET() {
   return NextResponse.json({
     anthropicKey,
     analysisMode: data?.analysis_mode ?? "rule-based",
+    digestPrefs: data?.digest_prefs ?? null,
   });
 }
 
@@ -66,6 +67,9 @@ export async function PUT(request: Request) {
   }
   if (typeof body.analysisMode === "string") {
     updates.analysis_mode = body.analysisMode;
+  }
+  if ("digestPrefs" in body) {
+    updates.digest_prefs = body.digestPrefs ?? null;
   }
 
   const { error } = await supabase

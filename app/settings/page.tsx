@@ -7,8 +7,6 @@ import { useAuth } from "@/components/AuthProvider";
 const mono = "'Space Mono', monospace";
 const bebas = "'Bebas Neue', sans-serif";
 
-const DIGEST_PREFS_KEY = "ma_digest";
-
 interface DigestPrefs {
   enabled: boolean;
   frequency: string;
@@ -16,13 +14,6 @@ interface DigestPrefs {
   timezone?: string;
   sameOnChange: boolean;
   watchlist: string[];
-}
-
-function loadDigestPrefs(): DigestPrefs | null {
-  try { const v = localStorage.getItem(DIGEST_PREFS_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
-}
-function clearDigestPrefs() {
-  try { localStorage.removeItem(DIGEST_PREFS_KEY); } catch {}
 }
 
 export default function SettingsPage() {
@@ -46,9 +37,9 @@ export default function SettingsPage() {
     fetch("/api/user/settings").then(r => r.json()).then(data => {
       if (data.anthropicKey) setApiKey(data.anthropicKey);
       if (data.analysisMode) setAnalysisMode(data.analysisMode);
+      if (data.digestPrefs) setDigestPrefs(data.digestPrefs);
       setSettingsLoaded(true);
     }).catch(() => setSettingsLoaded(true));
-    setDigestPrefs(loadDigestPrefs());
   }, [user]);
 
   const saveSettings = async () => {
@@ -71,8 +62,12 @@ export default function SettingsPage() {
   };
 
   const clearSchedule = () => {
-    clearDigestPrefs();
     setDigestPrefs(null);
+    fetch("/api/user/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ digestPrefs: null }),
+    }).catch(() => {});
   };
 
   const inputStyle: React.CSSProperties = {
@@ -126,7 +121,7 @@ export default function SettingsPage() {
 
       {/* Header */}
       <header style={{ borderBottom: "1px solid #0e0e0e" }}>
-        <div style={{ maxWidth: "50vw", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+        <div style={{ maxWidth: "min(50vw, 100%)", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
           <div>
             <div style={{ fontSize: "0.60rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "3px" }}>MARKET ANALYTICS</div>
             <h1 style={{ fontFamily: bebas, fontSize: "1.6rem", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>SETTINGS</h1>
@@ -151,7 +146,7 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: "50vw", margin: "0 auto", padding: "32px 24px" }}>
+      <main style={{ maxWidth: "min(50vw, 100%)", margin: "0 auto", padding: "32px 24px" }}>
         <button onClick={() => router.push("/app")}
           style={{ background: "transparent", border: "none", color: "#333", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer", letterSpacing: "1px", padding: "0 0 24px 0", display: "block" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}

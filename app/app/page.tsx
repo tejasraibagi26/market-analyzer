@@ -41,9 +41,6 @@ function loadDigestPrefs(): DigestPrefs | null {
   catch { return null; }
 }
 
-function saveDigestPrefs(prefs: DigestPrefs) {
-  try { localStorage.setItem(DIGEST_PREFS_KEY, JSON.stringify(prefs)); } catch {}
-}
 
 function clearDigestPrefs() {
   try { localStorage.removeItem(DIGEST_PREFS_KEY); } catch {}
@@ -415,7 +412,7 @@ export default function Dashboard() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState<"idle" | "sent" | "error">("idle");
   const [pendingEmailDigest, setPendingEmailDigest] = useState(false);
-  const [digestPrefs, setDigestPrefs] = useState<DigestPrefs | null>(() => loadDigestPrefs());
+  const [digestPrefs, setDigestPrefs] = useState<DigestPrefs | null>(null);
   const [showDigestSetup, setShowDigestSetup] = useState(false);
   const [dbLoaded, setDbLoaded] = useState(false);
   const prevWatchlistRef = useRef<string[]>([]);
@@ -441,6 +438,21 @@ export default function Dashboard() {
       if (settingsData.anthropicKey) {
         setApiKey(settingsData.anthropicKey);
         setKeyDecided(true);
+      }
+      if (settingsData.digestPrefs) {
+        setDigestPrefs(settingsData.digestPrefs);
+      } else {
+        // migrate from localStorage if present, then clear it
+        const local = loadDigestPrefs();
+        if (local) {
+          setDigestPrefs(local);
+          fetch("/api/user/settings", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ digestPrefs: local }),
+          }).catch(() => {});
+          clearDigestPrefs();
+        }
       }
       setDbLoaded(true);
     }).catch(() => {
@@ -505,12 +517,11 @@ export default function Dashboard() {
     const changed = symbols.join(",") !== prev.join(",");
     if (changed) {
       prevWatchlistRef.current = symbols;
-      const prefs = loadDigestPrefs();
-      if (prefs && prefs.enabled && !prefs.sameOnChange) {
+      if (digestPrefs && digestPrefs.enabled && !digestPrefs.sameOnChange) {
         setShowDigestSetup(true);
       }
     }
-  }, [symbols]);
+  }, [symbols, digestPrefs]);
 
   const runAnalysis = async (key: string) => {
     setLoadingAnalysis(true);
@@ -570,9 +581,14 @@ export default function Dashboard() {
   };
 
   const handleDigestSave = async (prefs: DigestPrefs) => {
-    saveDigestPrefs(prefs);
     setDigestPrefs(prefs);
     setShowDigestSetup(false);
+    // Persist to DB (source of truth — localStorage no longer used)
+    fetch("/api/user/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ digestPrefs: prefs }),
+    }).catch(() => {});
     // Register the job with email-service
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -722,7 +738,15 @@ export default function Dashboard() {
         <DigestSetupModal
           initialSymbols={symbols}
           onSave={handleDigestSave}
-          onSkip={() => { clearDigestPrefs(); setDigestPrefs(null); setShowDigestSetup(false); }}
+          onSkip={() => {
+            setDigestPrefs(null);
+            setShowDigestSetup(false);
+            fetch("/api/user/settings", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ digestPrefs: null }),
+            }).catch(() => {});
+          }}
         />
       )}
 
