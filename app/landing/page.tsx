@@ -116,15 +116,15 @@ export default function LandingPage() {
         </div>
 
         {/* Mini stat strip */}
-        <div style={{ display: "flex", gap: "32px", marginTop: "56px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "32px", marginTop: "56px", flexWrap: "wrap", alignItems: "flex-end" }}>
           {[
             { val: "Real-time", label: "Market data" },
             { val: "RSI · MACD", label: "Technical indicators" },
             { val: "Claude AI", label: "Optional AI signals" },
           ].map(s => (
-            <div key={s.label}>
-              <div style={{ fontFamily: bebas, fontSize: "1.4rem", color: "#fff", letterSpacing: "2px" }}>{s.val}</div>
-              <div style={{ fontSize: "0.62rem", color: "#333", letterSpacing: "2px" }}>{s.label}</div>
+            <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontFamily: bebas, fontSize: "1.4rem", color: "#fff", letterSpacing: "2px", lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontSize: "0.62rem", color: "#333", letterSpacing: "2px", lineHeight: 1 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -173,7 +173,7 @@ export default function LandingPage() {
         <div style={{ fontSize: "0.62rem", color: "#00ff88", letterSpacing: "4px", marginBottom: "8px" }}>◈ WHAT YOU GET</div>
         <div style={{ fontFamily: bebas, fontSize: "clamp(1.8rem,5vw,3rem)", letterSpacing: "4px", color: "#fff", marginBottom: "40px" }}>BUILT FOR TRADERS</div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1px", background: "#111" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1px", background: "#111" }}>
           {FEATURES.map(f => (
             <div key={f.title} style={{ background: "#080808", padding: "28px 24px" }}>
               <div style={{ fontSize: "0.60rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "10px" }}>{f.tag}</div>

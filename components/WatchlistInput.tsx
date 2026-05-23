@@ -36,21 +36,24 @@ export default function WatchlistInput({ symbols, onChange, onSchedule, schedule
   return (
     <div style={{ border: "1px solid #1a1a1a", background: "#080808", padding: "16px" }}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <span style={{ fontSize: "0.7rem", color: "#bebebe", letterSpacing: "2px" }}>◈ WATCHLIST</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {onSchedule && (
-            <button onClick={onSchedule}
-              style={{ fontSize: "0.60rem", color: scheduleLabel ? "#00ff88" : "#bebebe", background: "transparent", border: `1px solid ${scheduleLabel ? "#00ff8830" : "#1a1a1a"}`, padding: "3px 8px", cursor: "pointer", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", whiteSpace: "nowrap" }}>
-              {scheduleLabel ? `⏱ ${scheduleLabel}` : "⏱ Schedule"}
-            </button>
-          )}
+      <div style={{ marginBottom: "14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+          <span style={{ fontSize: "0.7rem", color: "#bebebe", letterSpacing: "2px" }}>◈ WATCHLIST</span>
           {symbols.length > 0 && (
-            <button onClick={clear} style={{ fontSize: "0.68rem", color: "#333", background: "transparent", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace", letterSpacing: "1px" }}>
-              Clear
+            <button onClick={clear} style={{ fontSize: "0.62rem", color: "#333", background: "transparent", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", padding: 0 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#888"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#333"; }}>
+              clear all
             </button>
           )}
         </div>
+        {onSchedule && (
+          <button onClick={onSchedule}
+            style={{ width: "100%", fontSize: "0.62rem", color: scheduleLabel ? "#00ff88" : "#555", background: scheduleLabel ? "#00ff8808" : "transparent", border: `1px solid ${scheduleLabel ? "#00ff8830" : "#1a1a1a"}`, padding: "8px 12px", cursor: "pointer", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", textAlign: "left", display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ opacity: 0.6 }}>⏱</span>
+            {scheduleLabel ? `Digest: ${scheduleLabel}` : "Schedule email digest"}
+          </button>
+        )}
       </div>
 
       {/* Input */}
