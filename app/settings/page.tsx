@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   const [apiKey, setApiKey] = useState("");
-  const [analysisMode, setAnalysisMode] = useState<"rule-based" | "ai">("rule-based");
+  const [analysisMode, setAnalysisMode] = useState<"rule-based" | "claude">("rule-based");
   const [digestPrefs, setDigestPrefs] = useState<DigestPrefs | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -159,7 +159,7 @@ export default function SettingsPage() {
             <div>
               <span style={labelStyle}>ANALYSIS MODE</span>
               <div style={{ display: "flex", gap: "8px" }}>
-                {(["rule-based", "ai"] as const).map(m => (
+                {(["rule-based", "claude"] as const).map(m => (
                   <button key={m} onClick={() => setAnalysisMode(m)}
                     style={{ flex: 1, padding: "10px 14px", background: analysisMode === m ? "#001a0d" : "transparent", border: `1px solid ${analysisMode === m ? "#00ff88" : "#1a1a1a"}`, color: analysisMode === m ? "#00ff88" : "#444", fontFamily: mono, fontSize: "0.72rem", letterSpacing: "1px", cursor: "pointer" }}>
                     {m === "rule-based" ? "Rule-based" : "Claude AI"}
