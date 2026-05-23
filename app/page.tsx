@@ -225,9 +225,44 @@ const ApiKeyModal = ({ onSave, onSkip, savedKey }: { onSave: (key: string) => vo
 
 const AnalyzeButton = ({ onClick, loading, disabled }: { onClick: () => void; loading: boolean; disabled: boolean }) => (
   <button onClick={onClick} disabled={loading || disabled}
-    style={{ width: "100%", background: loading ? "#111" : "#00ff88", color: loading ? "#555" : "#001a0d", border: `1px solid ${loading ? "#1a1a1a" : "#00ff88"}`, padding: "14px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.82rem", letterSpacing: "1px", cursor: loading || disabled ? "not-allowed" : "pointer", boxShadow: loading || disabled ? "none" : "0 0 30px rgba(0,255,136,0.2)", transition: "all 0.2s", animation: !loading && !disabled ? "pulse 3s infinite" : "none" }}>
+    style={{ width: "100%", background: loading ? "#0a0a0a" : "#00ff88", color: loading ? "#333" : "#001a0d", border: `1px solid ${loading ? "#111" : "#00ff88"}`, padding: "13px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.8rem", letterSpacing: "1px", cursor: loading || disabled ? "not-allowed" : "pointer", boxShadow: loading || disabled ? "none" : "0 0 24px rgba(0,255,136,0.15)", transition: "all 0.2s", animation: !loading && !disabled ? "pulse 3s infinite" : "none" }}>
     {loading ? "Analyzing..." : "▶ Analyze Signals"}
   </button>
+);
+
+const AnalysisPanel = ({ analysis }: { analysis: (import("@/types/market").AnalysisResult & { usedAI?: boolean }) }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+    {/* Market outlook */}
+    <div style={{ border: "1px solid #00ff8814", background: "#030a06", padding: "16px", borderLeft: "2px solid #00ff8840" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
+        <div style={{ fontSize: "0.6rem", color: "#00ff8855", letterSpacing: "2px" }}>MARKET OUTLOOK</div>
+        <div style={{ fontSize: "0.58rem", padding: "2px 8px", border: `1px solid ${analysis.usedAI ? "#00ff8820" : "#111"}`, color: analysis.usedAI ? "#00ff8866" : "#222" }}>
+          {analysis.usedAI ? "Claude AI" : "Rule-based"}
+        </div>
+      </div>
+      <p style={{ fontSize: "0.8rem", color: "#888", lineHeight: 1.85, margin: 0 }}>{analysis.marketOutlook}</p>
+      <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", paddingTop: "10px", borderTop: "1px solid #0a0a0a" }}>
+        <div style={{ fontSize: "0.6rem", color: "#1a2e20" }}>
+          {new Date(analysis.generatedAt).toLocaleString()}
+        </div>
+        {analysis.usage && (
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.6rem", color: "#141e18" }}>↑ {analysis.usage.inputTokens.toLocaleString()}</span>
+            <span style={{ fontSize: "0.6rem", color: "#141e18" }}>↓ {analysis.usage.outputTokens.toLocaleString()}</span>
+            <span style={{ fontSize: "0.6rem", color: "#00ff8833", fontWeight: "700" }}>${analysis.usage.costUsd.toFixed(4)}</span>
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Section label */}
+    <div style={{ fontSize: "0.6rem", color: "#1e1e1e", letterSpacing: "2px", paddingLeft: "2px" }}>SIGNALS</div>
+
+    {/* Suggestion cards */}
+    <div className="suggestion-grid">
+      {analysis.suggestions.map(s => <SuggestionCard key={s.symbol} suggestion={s} />)}
+    </div>
+  </div>
 );
 
 export default function Dashboard() {
@@ -475,11 +510,11 @@ export default function Dashboard() {
           height: 100vh;
           display: flex;
           flex-direction: column;
-          background: #050505;
+          background: #040404;
           color: #eee;
           font-family: 'Space Mono', monospace;
-          background-image: radial-gradient(ellipse at 10% 0%,#001a0d 0%,transparent 40%),
-                            radial-gradient(ellipse at 90% 100%,#0a0a1a 0%,transparent 40%);
+          background-image: radial-gradient(ellipse at 5% 0%, #001408 0%, transparent 45%),
+                            radial-gradient(ellipse at 95% 100%, #08081a 0%, transparent 45%);
           overflow: hidden;
         }
 
@@ -487,43 +522,55 @@ export default function Dashboard() {
         .app-root > footer { flex-shrink: 0; }
 
         .header-inner {
-          max-width: 1280px; margin: 0 auto; padding: 16px 20px;
+          max-width: 1400px; margin: 0 auto; padding: 14px 24px;
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
         }
-        .header-left  { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; overflow: hidden; }
-        .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .header-left  { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; overflow: hidden; }
+        .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .header-sub   { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .header-tag   { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .main-inner {
-          max-width: 1280px; margin: 0 auto; padding: 24px 20px; width: 100%;
+          max-width: 1400px; margin: 0 auto; padding: 20px 24px; width: 100%;
           flex: 1; overflow-y: auto; overflow-x: clip;
         }
         .main-scroll-wrapper { flex: 1; overflow-y: auto; overflow-x: clip; }
 
-        .layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
-        .sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; max-height: calc(100vh - 120px); overflow-y: auto; }
+        /* 3-column layout: sidebar | market | analysis */
+        .layout { display: grid; grid-template-columns: 280px 1fr 340px; gap: 20px; align-items: start; }
+        .sidebar { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 0; max-height: calc(100vh - 110px); overflow-y: auto; }
+        .analysis-col { position: sticky; top: 0; max-height: calc(100vh - 110px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
         .quote-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 1px; background: #111; align-items: stretch;
+          grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+          gap: 1px; background: #0e0e0e; align-items: stretch;
         }
         .suggestion-grid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
+          grid-template-columns: 1fr;
+          gap: 10px;
         }
 
         .movers-toggle { display: none; }
         .mobile-analyze { display: none; }
         .mobile-watchlist-wrapper { display: none !important; }
+        .desktop-analysis { display: flex; }
+        .mobile-toggle-view { display: none !important; }
+
+        @media (max-width: 1100px) {
+          .layout { grid-template-columns: 260px 1fr; }
+          .analysis-col { display: none; }
+          .desktop-analysis { display: none; }
+          .mobile-toggle-view { display: block !important; }
+          .suggestion-grid { grid-template-columns: repeat(2, 1fr); }
+        }
 
         @media (max-width: 768px) {
           .header-sub { display: none; }
           .header-tag { display: none; }
-          .header-inner { padding: 14px 16px; }
-          .main-inner { padding: 12px; }
+          .header-inner { padding: 12px 16px; }
+          .main-inner { padding: 10px 12px; }
 
           .layout { grid-template-columns: 1fr; }
           .layout > aside { display: none; }
@@ -553,49 +600,54 @@ export default function Dashboard() {
       )}
 
       {/* ── Header ── */}
-      <header style={{ borderBottom: "1px solid #111" }}>
+      <header style={{ borderBottom: "1px solid #0e0e0e" }}>
         <div className="header-inner">
           <div className="header-left">
             <div>
-              <div className="header-sub" style={{ fontSize: "0.65rem", color: "#00ff88", letterSpacing: "2px", marginBottom: "4px" }}>◈ Technical Analysis · Real-time Data</div>
-              <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1.6rem,5vw,3rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", background: "linear-gradient(135deg,#fff 0%,#555 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                MARKET<span style={{ WebkitTextFillColor: "#00ff88" }}> ANALYTICS</span>
+              <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>MARKET ANALYTICS</div>
+              <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1.4rem,3vw,2rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>
+                RSI · MACD · <span style={{ color: "#00ff88" }}>AI SIGNALS</span>
               </h1>
-              <p className="header-tag" style={{ color: "#444", fontSize: "0.7rem", marginTop: "6px", letterSpacing: "1px" }}>RSI · MACD · Bollinger Bands · Moving Averages</p>
+            </div>
+            <div className="header-tag" style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+              {lastUpdated && (
+                <span style={{ fontSize: "0.65rem", color: "#222", whiteSpace: "nowrap", borderLeft: "1px solid #111", paddingLeft: "12px" }}>
+                  {new Date(lastUpdated).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
             </div>
           </div>
           <div className="header-right">
-            {/* User avatar + sign out */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {keyDecided && (
+              <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); persistSettings("", "rule-based"); }}
+                style={{ fontSize: "0.6rem", color: apiKey.trim() ? "#00ff8866" : "#2a2a2a", background: "transparent", border: `1px solid ${apiKey.trim() ? "#00ff8820" : "#141414"}`, padding: "5px 10px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer", whiteSpace: "nowrap" }}>
+                {apiKey.trim() ? "◈ Claude AI" : "◈ Rule-based"}
+              </button>
+            )}
+            <button onClick={fetchQuotes} disabled={loadingQuotes}
+              style={{ background: "transparent", border: "1px solid #141414", color: loadingQuotes ? "#222" : "#444", padding: "6px 12px", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: loadingQuotes ? "not-allowed" : "pointer", whiteSpace: "nowrap", transition: "border-color 0.15s" }}
+              onMouseEnter={e => { if (!loadingQuotes) (e.currentTarget as HTMLElement).style.borderColor = "#2a2a2a"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#141414"; }}>
+              {loadingQuotes ? "···" : "↻"}
+            </button>
+            {/* User avatar */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", borderLeft: "1px solid #111", paddingLeft: "8px" }}>
               {user.user_metadata?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.user_metadata.avatar_url} alt="avatar"
-                  style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1px solid #1a1a1a" }} />
+                  style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid #1a1a1a" }} />
               ) : (
-                <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#001a0d", border: "1px solid #00ff8830", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem", color: "#00ff88" }}>
+                <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88" }}>
                   {(user.email ?? "?")[0].toUpperCase()}
                 </div>
               )}
               <button onClick={signOut}
-                style={{ fontSize: "0.62rem", color: "#333", background: "transparent", border: "1px solid #1a1a1a", padding: "5px 9px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer" }}>
+                style={{ fontSize: "0.6rem", color: "#282828", background: "transparent", border: "none", padding: "4px 0", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#282828"; }}>
                 sign out
               </button>
             </div>
-            {keyDecided && (
-              <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); persistSettings("", "rule-based"); }}
-                style={{ fontSize: "0.65rem", color: apiKey.trim() ? "#1f4a2e" : "#333", background: "transparent", border: `1px solid ${apiKey.trim() ? "#0a2a14" : "#1a1a1a"}`, padding: "6px 10px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer", whiteSpace: "nowrap" }}>
-                {apiKey.trim() ? "◈ Claude AI" : "◈ Rule-based"}
-              </button>
-            )}
-            {lastUpdated && (
-              <span style={{ fontSize: "0.72rem", color: "#444", whiteSpace: "nowrap" }}>
-                {new Date(lastUpdated).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            )}
-            <button onClick={fetchQuotes} disabled={loadingQuotes}
-              style={{ background: "transparent", border: "1px solid #1c1c1c", color: loadingQuotes ? "#333" : "#666", padding: "7px 14px", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: loadingQuotes ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
-              {loadingQuotes ? "..." : "↻"}
-            </button>
           </div>
         </div>
       </header>
@@ -611,31 +663,36 @@ export default function Dashboard() {
           <aside className="sidebar">
             <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); syncWatchlist(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
             {quotes.length > 0 && (
-              <div style={{ border: "1px solid #1a1a1a", background: "#080808", padding: "16px" }}>
-                <div style={{ fontSize: "0.72rem", color: "#555", letterSpacing: "1px", marginBottom: "12px" }}>◈ Top Movers</div>
+              <div style={{ border: "1px solid #111", background: "#060606", padding: "14px 16px" }}>
+                <div style={{ fontSize: "0.6rem", color: "#2a2a2a", letterSpacing: "2px", marginBottom: "10px" }}>TOP MOVERS</div>
                 {gainers.map(q => (
-                  <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0d0d0d", cursor: "pointer" }}>
-                    <span style={{ fontSize: "0.8rem", color: "#999" }}>{q.symbol}</span>
-                    <span style={{ fontSize: "0.8rem", color: "#00ff88" }}>+{q.changePercent.toFixed(2)}%</span>
+                  <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0a0a0a"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                    <span style={{ fontSize: "0.75rem", color: "#666" }}>{q.symbol.replace(".TO", "")}</span>
+                    <span style={{ fontSize: "0.75rem", color: "#00ff88", fontWeight: "700" }}>+{q.changePercent.toFixed(2)}%</span>
                   </div>
                 ))}
+                {gainers.length > 0 && losers.length > 0 && <div style={{ height: "1px", background: "#0d0d0d", margin: "4px 0" }} />}
                 {losers.map(q => (
-                  <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0d0d0d", cursor: "pointer" }}>
-                    <span style={{ fontSize: "0.8rem", color: "#999" }}>{q.symbol}</span>
-                    <span style={{ fontSize: "0.8rem", color: "#ff4444" }}>{q.changePercent.toFixed(2)}%</span>
+                  <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0a0a0a"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                    <span style={{ fontSize: "0.75rem", color: "#666" }}>{q.symbol.replace(".TO", "")}</span>
+                    <span style={{ fontSize: "0.75rem", color: "#ff4444", fontWeight: "700" }}>{q.changePercent.toFixed(2)}%</span>
                   </div>
                 ))}
               </div>
             )}
             <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
             <button onClick={handleEmailDigestClick} disabled={sendingEmail || quotes.length === 0}
-              style={{ width: "100%", background: sendingEmail ? "#111" : emailStatus === "sent" ? "#001a0d" : emailStatus === "error" ? "#1a0000" : "transparent", color: sendingEmail ? "#555" : emailStatus === "sent" ? "#00ff88" : emailStatus === "error" ? "#ff4444" : "#444", border: `1px solid ${emailStatus === "sent" ? "#00ff8840" : emailStatus === "error" ? "#ff444440" : "#1a1a1a"}`, padding: "12px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.75rem", letterSpacing: "1px", cursor: sendingEmail || quotes.length === 0 ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
+              style={{ width: "100%", background: sendingEmail ? "#0a0a0a" : emailStatus === "sent" ? "#001408" : emailStatus === "error" ? "#140000" : "transparent", color: sendingEmail ? "#333" : emailStatus === "sent" ? "#00ff88" : emailStatus === "error" ? "#ff4444" : "#2e2e2e", border: `1px solid ${emailStatus === "sent" ? "#00ff8820" : emailStatus === "error" ? "#ff444420" : "#111"}`, padding: "11px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.72rem", letterSpacing: "1px", cursor: sendingEmail || quotes.length === 0 ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
               {sendingEmail ? "Sending..." : emailStatus === "sent" ? "✓ Email Sent" : emailStatus === "error" ? "✗ Send Failed" : "✉ Email Digest"}
             </button>
           </aside>
 
           {/* ── Main content ── */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0, overflow: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0, overflow: "hidden" }}>
 
             {/* Mobile: watchlist + analyze button at top */}
             <div style={{ display: "none" }} className="mobile-watchlist-wrapper">
@@ -645,27 +702,26 @@ export default function Dashboard() {
               <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
             </div>
 
-            {/* Toggle button — shown whenever analysis is available */}
+            {/* Toggle button — mobile/medium screens when analysis is available */}
             {analysis && !loadingAnalysis && (
-              <button onClick={() => setMobileView(v => v === "analysis" ? "market" : "analysis")}
-                style={{ width: "100%", background: "transparent", border: "1px solid #1a1a1a", color: "#555", padding: "10px 16px", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>{mobileView === "analysis" ? "← Market Data" : "→ Analysis Results"}</span>
-                <span style={{ color: "#00ff88", fontSize: "0.60rem" }}>◈</span>
+              <button className="mobile-toggle-view" onClick={() => setMobileView(v => v === "analysis" ? "market" : "analysis")}
+                style={{ width: "100%", background: "transparent", border: "1px solid #141414", color: "#2e2e2e", padding: "10px 16px", fontFamily: "'Space Mono', monospace", fontSize: "0.7rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>{mobileView === "analysis" ? "← Market Data" : "→ Analysis"}</span>
+                <span style={{ color: "#00ff88", fontSize: "0.58rem" }}>◈</span>
               </button>
             )}
 
-            {/* Market data — hidden when viewing analysis */}
+            {/* Market data */}
             <div style={{ display: mobileView === "analysis" && !!analysis ? "none" : "block" }}>
-              {/* Quote grid */}
               {symbols.length === 0 ? (
-                <div style={{ border: "1px solid #0d0d0d", background: "#070707", padding: "48px 24px", textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.4rem", color: "#1a1a1a", letterSpacing: "3px", marginBottom: "8px" }}>No tickers added</div>
-                  <div style={{ fontSize: "0.72rem", color: "#111" }}>Add stocks or ETFs using the watchlist on the left</div>
+                <div style={{ border: "1px solid #0a0a0a", background: "#060606", padding: "48px 24px", textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.4rem", color: "#141414", letterSpacing: "3px", marginBottom: "8px" }}>No tickers added</div>
+                  <div style={{ fontSize: "0.68rem", color: "#1a1a1a" }}>Add stocks or ETFs using the watchlist on the left</div>
                 </div>
               ) : loadingQuotes && quotes.length === 0 ? (
                 <Spinner text="Fetching market data" />
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div className="quote-grid">
                     {quotes.map(quote => (
                       <QuoteCard key={quote.symbol} quote={quote}
@@ -681,17 +737,17 @@ export default function Dashboard() {
                   {quotes.length > 0 && (
                     <div className="movers-toggle">
                       <button onClick={() => setMoversOpen(o => !o)}
-                        style={{ width: "100%", background: "transparent", border: "1px solid #1a1a1a", color: "#555", padding: "10px 16px", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        style={{ width: "100%", background: "transparent", border: "1px solid #141414", color: "#333", padding: "10px 16px", fontFamily: "'Space Mono', monospace", fontSize: "0.7rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span>◈ Top Movers</span>
                         <span>{moversOpen ? "▲" : "▼"}</span>
                       </button>
                       {moversOpen && (
-                        <div style={{ border: "1px solid #1a1a1a", borderTop: "none", background: "#080808", padding: "12px 16px" }}>
+                        <div style={{ border: "1px solid #141414", borderTop: "none", background: "#060606", padding: "12px 16px" }}>
                           {[...gainers, ...losers].map(q => (
                             <div key={q.symbol} onClick={() => { setSelectedSymbol(q.symbol); setMoversOpen(false); }}
-                              style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0d0d0d", cursor: "pointer" }}>
-                              <span style={{ fontSize: "0.8rem", color: "#999" }}>{q.symbol}</span>
-                              <span style={{ fontSize: "0.8rem", color: q.changePercent > 0 ? "#00ff88" : "#ff4444" }}>
+                              style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}>
+                              <span style={{ fontSize: "0.78rem", color: "#666" }}>{q.symbol}</span>
+                              <span style={{ fontSize: "0.78rem", color: q.changePercent > 0 ? "#00ff88" : "#ff4444" }}>
                                 {q.changePercent > 0 ? "+" : ""}{q.changePercent.toFixed(2)}%
                               </span>
                             </div>
@@ -710,34 +766,26 @@ export default function Dashboard() {
             {/* Analysis spinner */}
             {loadingAnalysis && <Spinner text={analysisStage} />}
 
-            {/* Analysis results — hidden when viewing market data */}
+            {/* Analysis results — medium/mobile only (desktop shows in right column) */}
             {analysis && !loadingAnalysis && mobileView === "analysis" && (
-              <div style={{ animation: "fadeIn 0.5s ease" }}>
-                <div style={{ border: "1px solid #00ff8820", background: "#001a0d", padding: "20px", marginBottom: "16px", borderLeft: "3px solid #00ff88" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
-                    <div style={{ fontSize: "0.72rem", color: "#00ff8877", letterSpacing: "1px" }}>◈ Market Outlook</div>
-                    <div style={{ fontSize: "0.62rem", padding: "2px 8px", border: `1px solid ${analysis.usedAI ? "#00ff8830" : "#1a1a1a"}`, color: analysis.usedAI ? "#00ff8899" : "#333" }}>
-                      {analysis.usedAI ? "Claude AI" : "Rule-based"}
-                    </div>
-                  </div>
-                  <p style={{ fontSize: "0.85rem", color: "#ccc", lineHeight: 1.8, margin: 0 }}>{analysis.marketOutlook}</p>
-                  <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
-                    <div style={{ fontSize: "0.65rem", color: "#1f4a2e" }}>
-                      Computed {new Date(analysis.generatedAt).toLocaleString()}
-                    </div>
-                    {analysis.usage && (
-                      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: "0.65rem", color: "#1a3a2a" }}>↑ {analysis.usage.inputTokens.toLocaleString()} in</span>
-                        <span style={{ fontSize: "0.65rem", color: "#1a3a2a" }}>↓ {analysis.usage.outputTokens.toLocaleString()} out</span>
-                        <span style={{ fontSize: "0.65rem", color: "#00ff8844", fontWeight: "700" }}>${analysis.usage.costUsd.toFixed(4)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "#555", letterSpacing: "1px", marginBottom: "12px" }}>◈ Where to add money</div>
-                <div className="suggestion-grid">
-                  {analysis.suggestions.map(s => <SuggestionCard key={s.symbol} suggestion={s} />)}
-                </div>
+              <div className="mobile-toggle-view" style={{ animation: "fadeIn 0.4s ease" }}>
+                <AnalysisPanel analysis={analysis} />
+              </div>
+            )}
+          </div>
+
+          {/* ── Desktop analysis column ── */}
+          <div className="analysis-col desktop-analysis">
+            {loadingAnalysis ? (
+              <Spinner text={analysisStage} />
+            ) : analysis ? (
+              <div style={{ animation: "fadeIn 0.4s ease" }}>
+                <AnalysisPanel analysis={analysis} />
+              </div>
+            ) : (
+              <div style={{ border: "1px solid #0a0a0a", background: "#060606", padding: "32px 20px", textAlign: "center" }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.1rem", color: "#141414", letterSpacing: "3px", marginBottom: "8px" }}>No Analysis</div>
+                <div style={{ fontSize: "0.65rem", color: "#1a1a1a", lineHeight: 1.6 }}>Click Analyze Signals to generate AI or rule-based signals for your watchlist</div>
               </div>
             )}
           </div>
