@@ -31,6 +31,7 @@ export default function SettingsPage() {
 
   const [apiKey, setApiKey] = useState("");
   const [analysisMode, setAnalysisMode] = useState<"rule-based" | "claude">("rule-based");
+  const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
   const [digestPrefs, setDigestPrefs] = useState<DigestPrefs | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -86,9 +87,42 @@ export default function SettingsPage() {
 
   if (authLoading || !user) return null;
 
+  const ApiKeyHelpModal = () => (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
+      onClick={() => setShowApiKeyHelp(false)}>
+      <div style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", maxWidth: "420px", width: "100%", padding: "28px" }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+          <div>
+            <div style={{ fontSize: "0.58rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "4px" }}>◈ GUIDE</div>
+            <div style={{ fontFamily: bebas, fontSize: "1.2rem", letterSpacing: "3px", color: "#fff" }}>GET AN API KEY</div>
+          </div>
+          <button onClick={() => setShowApiKeyHelp(false)}
+            style={{ background: "transparent", border: "none", color: "#333", fontSize: "1rem", cursor: "pointer", padding: "0", lineHeight: 1 }}>✕</button>
+        </div>
+        <ol style={{ margin: 0, padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          {[
+            { n: "1", text: "Go to console.anthropic.com and sign in or create a free account." },
+            { n: "2", text: 'Navigate to "API Keys" in the left sidebar.' },
+            { n: "3", text: 'Click "Create Key", give it a name, and copy the key — it starts with sk-ant-.' },
+            { n: "4", text: "Paste it into the field above and save. Your key is stored encrypted and never shared." },
+          ].map(({ n, text }) => (
+            <li key={n} style={{ fontSize: "0.72rem", color: "#555", lineHeight: 1.7, paddingLeft: "4px" }}>
+              <span style={{ color: "#00ff88" }}>{n}.</span>{" "}{text}
+            </li>
+          ))}
+        </ol>
+        <div style={{ marginTop: "20px", padding: "12px 14px", background: "#080808", border: "1px solid #111", fontSize: "0.65rem", color: "#333", lineHeight: 1.6 }}>
+          Free tier includes $5 of credits — enough for hundreds of analyses.
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ minHeight: "100vh", background: "#050505", color: "#eee", fontFamily: mono }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap'); *, *::before, *::after { box-sizing: border-box; }`}</style>
+      {showApiKeyHelp && <ApiKeyHelpModal />}
 
       {/* Header */}
       <header style={{ borderBottom: "1px solid #0e0e0e" }}>
@@ -146,7 +180,15 @@ export default function SettingsPage() {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
-              <span style={labelStyle}>ANTHROPIC API KEY</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ ...labelStyle, marginBottom: 0 }}>ANTHROPIC API KEY</span>
+                <button onClick={() => setShowApiKeyHelp(true)}
+                  style={{ background: "transparent", border: "none", color: "#2a2a2a", fontFamily: mono, fontSize: "0.58rem", letterSpacing: "1px", cursor: "pointer", padding: 0 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#00ff8899"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#2a2a2a"; }}>
+                  How to get a key? →
+                </button>
+              </div>
               <input
                 type="password"
                 placeholder="sk-ant-..."

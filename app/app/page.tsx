@@ -859,7 +859,7 @@ export default function Dashboard() {
             )}
 
             {/* Market data */}
-            <div style={{ display: mobileView === "analysis" && !!analysis ? "none" : "block" }}>
+            <div style={{ display: mobileView === "analysis" && !!analysis && !loadingAnalysis ? "none" : "block" }}>
               {symbols.length === 0 ? (
                 <div style={{ border: "1px solid #0a0a0a", background: "#060606", padding: "48px 24px", textAlign: "center" }}>
                   <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.4rem", color: "#141414", letterSpacing: "3px", marginBottom: "8px" }}>No tickers added</div>
@@ -910,8 +910,12 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Analysis spinner */}
-            {loadingAnalysis && <Spinner text={analysisStage} />}
+            {/* Analysis spinner — mobile/medium only (desktop has its own column) */}
+            {loadingAnalysis && (
+              <div className="mobile-toggle-view">
+                <Spinner text={analysisStage} />
+              </div>
+            )}
 
             {/* Analysis results — medium/mobile only (desktop shows in right column) */}
             {analysis && !loadingAnalysis && mobileView === "analysis" && (
