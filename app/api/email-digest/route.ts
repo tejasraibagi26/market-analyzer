@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
 
   const symbols: string[] = body.symbols ?? DEFAULT_WATCHLIST;
   const to: string = body.to ?? process.env.DIGEST_EMAIL_TO ?? "";
+  const dryRun: boolean = body.dryRun === true;
   const apiKey = request.headers.get("x-anthropic-key") ?? "";
 
   if (!to) {
@@ -70,6 +71,10 @@ export async function POST(request: NextRequest) {
       buySuggestions.length > 0
         ? `Market Digest - ${buySuggestions.length} Buy Signal${buySuggestions.length > 1 ? "s" : ""}: ${buySuggestions.map((s) => s.symbol).join(", ")} - ${dateStr}`
         : `Market Digest - ${dateStr}`;
+
+    if (dryRun) {
+      return NextResponse.json({ subject, html, symbols, usedAI: !!apiKey });
+    }
 
     await sendEmailDigest({ to, subject, html });
     console.log(`[email-digest] Sent to ${to} — subject: "${subject}"`);

@@ -23,19 +23,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "cronExpression is required" }, { status: 400 });
   }
 
-  const digestUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/email-digest`;
+  const digestUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://market-analytics.vercel.app"}/api/email-digest`;
 
-  // Register as a scheduled job on the email-service
-  // The body of each scheduled send will be fetched dynamically from the digest endpoint
-  // We use the email-service's job scheduler to call our own digest endpoint via a pre-built email
-  // Instead, schedule directly with the email-service using a fixed subject + html placeholder,
-  // then rely on the email-digest route for the actual content by creating a webhook-style job.
-
-  // Since email-service sends static emails, we register the job there with a note,
-  // and the real dynamic content comes from POST /api/email-digest being called on schedule.
-  // The simplest approach: register a cron job on email-service that sends to digestTo.
   try {
-    const res = await fetch(`${emailServiceUrl}/jobs`, {
+    const res = await fetch(`${emailServiceUrl}/schedule`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${emailServiceKey}`,
@@ -46,8 +37,12 @@ export async function POST(request: NextRequest) {
         appName: "Market Analytics",
         to: user.email,
         subject: "Market Analytics — Scheduled Digest",
-        text: `Your scheduled market digest is being generated. Symbols: ${(symbols ?? []).join(", ")}`,
         cronExpression,
+        metadata: {
+          type: "digest",
+          symbols: symbols ?? [],
+          digestUrl,
+        },
       }),
     });
 

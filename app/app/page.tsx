@@ -99,24 +99,19 @@ const DAYS = [
   { label: "S", name: "Sun", value: 0 },
 ];
 
-function buildCustomCron(selectedDays: number[], timeStr: string, tzOffset: number): { cron: string; label: string } | null {
+function buildCustomCron(selectedDays: number[], hourStr: string, tzOffset: number): { cron: string; label: string } | null {
   if (selectedDays.length === 0) return null;
-  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
-  if (!match) return null;
-  let localHour = parseInt(match[1], 10);
-  const localMinute = parseInt(match[2], 10);
-  const meridiem = match[3]?.toLowerCase();
-  if (meridiem === "pm" && localHour < 12) localHour += 12;
-  if (meridiem === "am" && localHour === 12) localHour = 0;
-  if (localHour < 0 || localHour > 23 || localMinute < 0 || localMinute > 59) return null;
+  const parsed = parseInt(hourStr, 10);
+  if (isNaN(parsed) || parsed < 0 || parsed > 23) return null;
+  const localHour = parsed;
 
-  const { utcHour, utcMinute } = localToUtc(localHour, localMinute, tzOffset);
+  const { utcHour, utcMinute } = localToUtc(localHour, 0, tzOffset);
   const sorted = [...selectedDays].sort((a, b) => a - b);
   const dayStr = sorted.join(",");
   const cron = `${utcMinute} ${utcHour} * * ${dayStr}`;
 
   const dayNames = sorted.map(v => DAYS.find(d => d.value === v)?.name ?? "").join(", ");
-  const timeLabel = `${localHour % 12 === 0 ? 12 : localHour % 12}:${String(localMinute).padStart(2, "0")}${localHour < 12 ? "am" : "pm"}`;
+  const timeLabel = `${localHour % 12 === 0 ? 12 : localHour % 12}${localHour < 12 ? "am" : "pm"}`;
   const label = `${dayNames} at ${timeLabel}`;
 
   return { cron, label };
@@ -132,7 +127,7 @@ const DigestSetupModal = ({
   const [step, setStep] = useState<"consent" | "frequency" | "onChange">("consent");
   const [selectedFreq, setSelectedFreq] = useState<typeof FREQUENCIES[number]>(FREQUENCIES[0]);
   const [customDays, setCustomDays] = useState<number[]>([]);
-  const [customTime, setCustomTime] = useState("09:00");
+  const [customTime, setCustomTime] = useState("9");
   const [sameOnChange, setSameOnChange] = useState<boolean | null>(null);
   const [selectedTz, setSelectedTz] = useState(() => {
     const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -214,13 +209,17 @@ const DigestSetupModal = ({
                   );
                 })}
               </div>
-              <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "8px" }}>TIME</div>
-              <input
-                type="time"
+              <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "8px" }}>HOUR</div>
+              <select
                 value={customTime}
                 onChange={e => setCustomTime(e.target.value)}
-                style={{ width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#ccc", fontFamily: "'Space Mono', monospace", fontSize: "0.78rem", padding: "10px 14px", boxSizing: "border-box", outline: "none", letterSpacing: "1px", colorScheme: "dark" }}
-              />
+                style={{ width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#ccc", fontFamily: "'Space Mono', monospace", fontSize: "0.78rem", padding: "10px 14px", outline: "none", letterSpacing: "1px", colorScheme: "dark", cursor: "pointer" }}
+              >
+                {Array.from({ length: 24 }, (_, h) => {
+                  const label = `${h % 12 === 0 ? 12 : h % 12}:00 ${h < 12 ? "am" : "pm"}`;
+                  return <option key={h} value={String(h)}>{label}</option>;
+                })}
+              </select>
               {customResult && (
                 <div style={{ fontSize: "0.65rem", color: "#00ff8866", marginTop: "10px", letterSpacing: "0.5px" }}>
                   ◈ {customResult.label} {selectedTz.label}
@@ -661,15 +660,15 @@ export default function Dashboard() {
         .header-tag   { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .main-inner {
-          max-width: 75vw; margin: 0 auto; padding: 20px 24px; width: 100%;
+          max-width: 1400px; margin: 0 auto; padding: 20px 24px; width: 100%;
           flex: 1; overflow-y: auto; overflow-x: clip;
         }
         .main-scroll-wrapper { flex: 1; overflow-y: auto; overflow-x: clip; }
 
-        /* 3-column layout: sidebar | market | analysis */
-        .layout { display: grid; grid-template-columns: 280px 1fr 340px; gap: 20px; align-items: start; }
+        /* 2-column layout: sidebar | market+analysis */
+        .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
         .sidebar { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 0; max-height: calc(100vh - 110px); overflow-y: auto; }
-        .analysis-col { position: sticky; top: 0; max-height: calc(100vh - 110px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+        .analysis-col { display: none !important; }
 
         .quote-grid {
           display: grid;
@@ -685,14 +684,12 @@ export default function Dashboard() {
         .movers-toggle { display: none; }
         .mobile-analyze { display: none; }
         .mobile-watchlist-wrapper { display: none !important; }
-        .desktop-analysis { display: flex; }
+        .desktop-analysis { display: none !important; }
         .mobile-toggle-view { display: none !important; }
+        .inline-analysis { display: block; }
 
         @media (max-width: 1100px) {
           .layout { grid-template-columns: 260px 1fr; }
-          .analysis-col { display: none; }
-          .desktop-analysis { display: none; }
-          .mobile-toggle-view { display: block !important; }
           .suggestion-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
@@ -849,17 +846,8 @@ export default function Dashboard() {
               <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
             </div>
 
-            {/* Toggle button — mobile/medium screens when analysis is available */}
-            {analysis && !loadingAnalysis && (
-              <button className="mobile-toggle-view" onClick={() => setMobileView(v => v === "analysis" ? "market" : "analysis")}
-                style={{ width: "100%", background: "transparent", border: "1px solid #141414", color: "#2e2e2e", padding: "10px 16px", fontFamily: "'Space Mono', monospace", fontSize: "0.7rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>{mobileView === "analysis" ? "← Market Data" : "→ Analysis"}</span>
-                <span style={{ color: "#00ff88", fontSize: "0.58rem" }}>◈</span>
-              </button>
-            )}
-
             {/* Market data */}
-            <div style={{ display: mobileView === "analysis" && !!analysis && !loadingAnalysis ? "none" : "block" }}>
+            <div>
               {symbols.length === 0 ? (
                 <div style={{ border: "1px solid #0a0a0a", background: "#060606", padding: "48px 24px", textAlign: "center" }}>
                   <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.4rem", color: "#141414", letterSpacing: "3px", marginBottom: "8px" }}>No tickers added</div>
@@ -910,16 +898,10 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Analysis spinner — mobile/medium only (desktop has its own column) */}
-            {loadingAnalysis && (
-              <div className="mobile-toggle-view">
-                <Spinner text={analysisStage} />
-              </div>
-            )}
-
-            {/* Analysis results — medium/mobile only (desktop shows in right column) */}
-            {analysis && !loadingAnalysis && mobileView === "analysis" && (
-              <div className="mobile-toggle-view" style={{ animation: "fadeIn 0.4s ease" }}>
+            {/* Analysis — always inline below market data */}
+            {loadingAnalysis && <Spinner text={analysisStage} />}
+            {analysis && !loadingAnalysis && (
+              <div style={{ animation: "fadeIn 0.4s ease", marginTop: "16px" }}>
                 <AnalysisPanel analysis={analysis} />
               </div>
             )}
