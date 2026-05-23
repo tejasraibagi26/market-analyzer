@@ -92,18 +92,10 @@ export default function SettingsPage() {
 
       {/* Header */}
       <header style={{ borderBottom: "1px solid #0e0e0e" }}>
-        <div style={{ maxWidth: "75vw", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <button onClick={() => router.push("/app")}
-              style={{ background: "transparent", border: "none", color: "#333", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer", letterSpacing: "1px", padding: 0 }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#333"; }}>
-              ← back
-            </button>
-            <div>
-              <div style={{ fontSize: "0.60rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "3px" }}>MARKET ANALYTICS</div>
-              <h1 style={{ fontFamily: bebas, fontSize: "1.6rem", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>SETTINGS</h1>
-            </div>
+        <div style={{ maxWidth: "50vw", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+          <div>
+            <div style={{ fontSize: "0.60rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "3px" }}>MARKET ANALYTICS</div>
+            <h1 style={{ fontFamily: bebas, fontSize: "1.6rem", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>SETTINGS</h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             {user.user_metadata?.avatar_url ? (
@@ -125,7 +117,13 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: "75vw", margin: "0 auto", padding: "32px 24px" }}>
+      <main style={{ maxWidth: "50vw", margin: "0 auto", padding: "32px 24px" }}>
+        <button onClick={() => router.push("/app")}
+          style={{ background: "transparent", border: "none", color: "#333", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer", letterSpacing: "1px", padding: "0 0 24px 0", display: "block" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#333"; }}>
+          ← back
+        </button>
 
         {/* Account */}
         <section>
