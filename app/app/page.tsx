@@ -57,6 +57,38 @@ const FREQUENCIES = [
   { label: "Custom",          cron: "custom",       short: "Custom" },
 ];
 
+const DAYS = [
+  { label: "M", name: "Mon", value: 1 },
+  { label: "T", name: "Tue", value: 2 },
+  { label: "W", name: "Wed", value: 3 },
+  { label: "T", name: "Thu", value: 4 },
+  { label: "F", name: "Fri", value: 5 },
+  { label: "S", name: "Sat", value: 6 },
+  { label: "S", name: "Sun", value: 0 },
+];
+
+function buildCustomCron(selectedDays: number[], timeStr: string): { cron: string; label: string } | null {
+  if (selectedDays.length === 0) return null;
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
+  if (!match) return null;
+  let hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2], 10);
+  const meridiem = match[3]?.toLowerCase();
+  if (meridiem === "pm" && hour < 12) hour += 12;
+  if (meridiem === "am" && hour === 12) hour = 0;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
+  const sorted = [...selectedDays].sort((a, b) => a - b);
+  const dayStr = sorted.join(",");
+  const cron = `${minute} ${hour} * * ${dayStr}`;
+
+  const dayNames = sorted.map(v => DAYS.find(d => d.value === v)?.name ?? "").join(", ");
+  const timeLabel = `${hour % 12 === 0 ? 12 : hour % 12}:${String(minute).padStart(2, "0")}${hour < 12 ? "am" : "pm"}`;
+  const label = `${dayNames} at ${timeLabel}`;
+
+  return { cron, label };
+}
+
 const DigestSetupModal = ({
   onSave, onSkip, initialSymbols,
 }: {
@@ -66,25 +98,30 @@ const DigestSetupModal = ({
 }) => {
   const [step, setStep] = useState<"consent" | "frequency" | "onChange">("consent");
   const [selectedFreq, setSelectedFreq] = useState(FREQUENCIES[0]);
-  const [customCron, setCustomCron] = useState("");
+  const [customDays, setCustomDays] = useState<number[]>([]);
+  const [customTime, setCustomTime] = useState("09:00");
   const [sameOnChange, setSameOnChange] = useState<boolean | null>(null);
 
   const isCustom = selectedFreq.cron === "custom";
-  const effectiveCron = isCustom ? customCron.trim() : selectedFreq.cron;
-  const effectiveLabel = isCustom ? (customCron.trim() || "Custom") : selectedFreq.label;
-  const effectiveShort = isCustom ? (customCron.trim() || "Custom") : selectedFreq.short;
-  const canContinue = isCustom ? customCron.trim().split(/\s+/).length === 5 : true;
+  const customResult = isCustom ? buildCustomCron(customDays, customTime) : null;
+  const effectiveCron = isCustom ? (customResult?.cron ?? "") : selectedFreq.cron;
+  const effectiveLabel = isCustom ? (customResult?.label ?? "Custom") : selectedFreq.label;
+  const effectiveShort = isCustom ? (customResult?.label ?? "Custom") : selectedFreq.short;
+  const canContinue = isCustom ? customResult !== null : true;
 
   const modalStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, fontFamily: "'Space Mono', monospace", padding: "16px" };
-  const boxStyle: React.CSSProperties = { width: "100%", maxWidth: "480px", border: "1px solid #1a1a1a", background: "#080808", padding: "28px" };
+  const boxStyle: React.CSSProperties = { width: "100%", maxWidth: "480px", border: "1px solid #1a1a1a", background: "#080808", padding: "28px", position: "relative" };
   const labelStyle: React.CSSProperties = { fontSize: "0.62rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "6px" };
   const titleStyle: React.CSSProperties = { fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.7rem", letterSpacing: "3px", color: "#fff", marginBottom: "16px" };
   const btnPrimary: React.CSSProperties = { width: "100%", background: "#00ff88", color: "#001a0d", border: "none", padding: "13px 16px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.78rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" };
   const btnSecondary: React.CSSProperties = { width: "100%", background: "transparent", color: "#555", border: "1px solid #1a1a1a", padding: "13px 16px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.78rem", letterSpacing: "1px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" };
+  const closeBtn: React.CSSProperties = { position: "absolute", top: "14px", right: "14px", background: "transparent", border: "none", color: "#333", cursor: "pointer", lineHeight: 1, padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" };
+  const CloseIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
 
   if (step === "consent") return (
     <div style={modalStyle}>
       <div style={boxStyle}>
+        <button style={closeBtn} onClick={onSkip} aria-label="Close"><CloseIcon /></button>
         <div style={labelStyle}>◈ EMAIL DIGEST</div>
         <div style={titleStyle}>SCHEDULED UPDATES</div>
         <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, marginBottom: "20px" }}>
@@ -101,6 +138,7 @@ const DigestSetupModal = ({
   if (step === "frequency") return (
     <div style={modalStyle}>
       <div style={boxStyle}>
+        <button style={closeBtn} onClick={onSkip} aria-label="Close"><CloseIcon /></button>
         <button onClick={() => setStep("consent")} style={{ background: "transparent", border: "none", color: "#444", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: "pointer", padding: "0 0 16px 0", letterSpacing: "1px" }}>← Back</button>
         <div style={labelStyle}>◈ FREQUENCY</div>
         <div style={titleStyle}>HOW OFTEN?</div>
@@ -113,17 +151,31 @@ const DigestSetupModal = ({
             </button>
           ))}
           {isCustom && (
-            <div style={{ marginTop: "4px" }}>
-              <input
-                type="text"
-                placeholder="e.g. 0 9 * * 1-5"
-                value={customCron}
-                onChange={e => setCustomCron(e.target.value)}
-                style={{ width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#fff", fontFamily: "'Space Mono', monospace", fontSize: "0.78rem", padding: "11px 14px", boxSizing: "border-box", outline: "none", letterSpacing: "1px" }}
-              />
-              <div style={{ fontSize: "0.65rem", color: "#444", marginTop: "6px", letterSpacing: "0.5px" }}>
-                min hour day month weekday — times are UTC
+            <div style={{ marginTop: "12px", border: "1px solid #1a1a1a", padding: "16px", background: "#0a0a0a" }}>
+              <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "10px" }}>DAYS</div>
+              <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
+                {DAYS.map((d, i) => {
+                  const active = customDays.includes(d.value);
+                  return (
+                    <button key={i} title={d.name} onClick={() => setCustomDays(prev => active ? prev.filter(v => v !== d.value) : [...prev, d.value])}
+                      style={{ flex: 1, aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", background: active ? "#001a0d" : "transparent", border: `1px solid ${active ? "#00ff88" : "#222"}`, color: active ? "#00ff88" : "#444", fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", cursor: "pointer", fontWeight: active ? "700" : "400", padding: 0 }}>
+                      {d.label}
+                    </button>
+                  );
+                })}
               </div>
+              <div style={{ fontSize: "0.60rem", color: "#444", letterSpacing: "2px", marginBottom: "8px" }}>TIME (UTC)</div>
+              <input
+                type="time"
+                value={customTime}
+                onChange={e => setCustomTime(e.target.value)}
+                style={{ width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#ccc", fontFamily: "'Space Mono', monospace", fontSize: "0.78rem", padding: "10px 14px", boxSizing: "border-box", outline: "none", letterSpacing: "1px", colorScheme: "dark" }}
+              />
+              {customResult && (
+                <div style={{ fontSize: "0.65rem", color: "#00ff8866", marginTop: "10px", letterSpacing: "0.5px" }}>
+                  ◈ {customResult.label}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -136,6 +188,7 @@ const DigestSetupModal = ({
   return (
     <div style={modalStyle}>
       <div style={boxStyle}>
+        <button style={closeBtn} onClick={onSkip} aria-label="Close"><CloseIcon /></button>
         <button onClick={() => setStep("frequency")} style={{ background: "transparent", border: "none", color: "#444", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: "pointer", padding: "0 0 16px 0", letterSpacing: "1px" }}>← Back</button>
         <div style={labelStyle}>◈ WATCHLIST CHANGES</div>
         <div style={titleStyle}>ON WATCHLIST CHANGE?</div>
@@ -190,7 +243,9 @@ const ApiKeyModal = ({ onSave, onSkip, savedKey }: { onSave: (key: string) => vo
   };
 
   const modalStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, fontFamily: "'Space Mono', monospace", padding: "16px" };
-  const boxStyle: React.CSSProperties = { width: "100%", maxWidth: "480px", border: "1px solid #1a1a1a", background: "#080808", padding: "28px" };
+  const boxStyle: React.CSSProperties = { width: "100%", maxWidth: "480px", border: "1px solid #1a1a1a", background: "#080808", padding: "28px", position: "relative" };
+  const closeBtn: React.CSSProperties = { position: "absolute", top: "14px", right: "14px", background: "transparent", border: "none", color: "#333", cursor: "pointer", lineHeight: 1, padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" };
+  const CloseIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
   const labelStyle: React.CSSProperties = { fontSize: "0.65rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "6px" };
   const titleStyle: React.CSSProperties = { fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.8rem", letterSpacing: "3px", color: "#fff", marginBottom: "16px" };
 
@@ -198,6 +253,7 @@ const ApiKeyModal = ({ onSave, onSkip, savedKey }: { onSave: (key: string) => vo
     return (
       <div style={modalStyle}>
         <div style={boxStyle}>
+          <button style={closeBtn} onClick={onSkip} aria-label="Close"><CloseIcon /></button>
           <div style={labelStyle}>◈ ANALYSIS MODE</div>
           <div style={titleStyle}>HOW TO ANALYZE?</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -222,6 +278,7 @@ const ApiKeyModal = ({ onSave, onSkip, savedKey }: { onSave: (key: string) => vo
   return (
     <div style={modalStyle}>
       <div style={boxStyle}>
+        <button style={closeBtn} onClick={onSkip} aria-label="Close"><CloseIcon /></button>
         <button onClick={() => setStep("choose")} style={{ background: "transparent", border: "none", color: "#444", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: "pointer", padding: "0 0 16px 0", letterSpacing: "1px" }}>← Back</button>
         <div style={labelStyle}>◈ ANTHROPIC API KEY</div>
         <div style={titleStyle}>CLAUDE AI</div>
@@ -652,28 +709,39 @@ export default function Dashboard() {
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#141414"; }}>
               {loadingQuotes ? "···" : "↻"}
             </button>
-            {/* User avatar */}
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", borderLeft: "1px solid #111", paddingLeft: "8px" }}>
+            {/* User avatar + icon actions */}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", borderLeft: "1px solid #111", paddingLeft: "10px" }}>
               {user.user_metadata?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.user_metadata.avatar_url} alt="avatar"
-                  style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid #1a1a1a" }} />
+                  style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1px solid #1a1a1a", marginRight: "4px" }} />
               ) : (
-                <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88" }}>
+                <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88", marginRight: "4px" }}>
                   {(user.email ?? "?")[0].toUpperCase()}
                 </div>
               )}
-              <button onClick={() => router.push("/settings")}
-                style={{ fontSize: "0.6rem", color: "#282828", background: "transparent", border: "none", padding: "4px 0", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#282828"; }}>
-                settings
+              <button
+                onClick={() => router.push("/settings")}
+                title="Settings"
+                style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "1px solid #1e1e1e", color: "#555", cursor: "pointer", borderRadius: "2px", flexShrink: 0, transition: "all 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#00ff8840"; (e.currentTarget as HTMLElement).style.color = "#00ff88"; (e.currentTarget as HTMLElement).style.background = "#001a0d"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; (e.currentTarget as HTMLElement).style.color = "#555"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
               </button>
-              <button onClick={signOut}
-                style={{ fontSize: "0.6rem", color: "#282828", background: "transparent", border: "none", padding: "4px 0", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#282828"; }}>
-                sign out
+              <button
+                onClick={signOut}
+                title="Sign out"
+                style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "1px solid #1e1e1e", color: "#555", cursor: "pointer", borderRadius: "2px", flexShrink: 0, transition: "all 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#ff444440"; (e.currentTarget as HTMLElement).style.color = "#ff4444"; (e.currentTarget as HTMLElement).style.background = "#1a0000"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; (e.currentTarget as HTMLElement).style.color = "#555"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
               </button>
             </div>
           </div>
