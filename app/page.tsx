@@ -54,6 +54,7 @@ const FREQUENCIES = [
   { label: "Weekdays at 8am", cron: "0 8 * * 1-5", short: "Weekdays 8am" },
   { label: "Weekly Monday",   cron: "0 9 * * 1",   short: "Weekly Mon" },
   { label: "Weekly Friday",   cron: "0 17 * * 5",  short: "Weekly Fri" },
+  { label: "Custom",          cron: "custom",       short: "Custom" },
 ];
 
 const DigestSetupModal = ({
@@ -65,7 +66,14 @@ const DigestSetupModal = ({
 }) => {
   const [step, setStep] = useState<"consent" | "frequency" | "onChange">("consent");
   const [selectedFreq, setSelectedFreq] = useState(FREQUENCIES[0]);
+  const [customCron, setCustomCron] = useState("");
   const [sameOnChange, setSameOnChange] = useState<boolean | null>(null);
+
+  const isCustom = selectedFreq.cron === "custom";
+  const effectiveCron = isCustom ? customCron.trim() : selectedFreq.cron;
+  const effectiveLabel = isCustom ? (customCron.trim() || "Custom") : selectedFreq.label;
+  const effectiveShort = isCustom ? (customCron.trim() || "Custom") : selectedFreq.short;
+  const canContinue = isCustom ? customCron.trim().split(/\s+/).length === 5 : true;
 
   const modalStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, fontFamily: "'Space Mono', monospace", padding: "16px" };
   const boxStyle: React.CSSProperties = { width: "100%", maxWidth: "480px", border: "1px solid #1a1a1a", background: "#080808", padding: "28px" };
@@ -104,8 +112,22 @@ const DigestSetupModal = ({
               {selectedFreq.cron === f.cron && <span>◈</span>}
             </button>
           ))}
+          {isCustom && (
+            <div style={{ marginTop: "4px" }}>
+              <input
+                type="text"
+                placeholder="e.g. 0 9 * * 1-5"
+                value={customCron}
+                onChange={e => setCustomCron(e.target.value)}
+                style={{ width: "100%", background: "#0d0d0d", border: "1px solid #2a2a2a", color: "#fff", fontFamily: "'Space Mono', monospace", fontSize: "0.78rem", padding: "11px 14px", boxSizing: "border-box", outline: "none", letterSpacing: "1px" }}
+              />
+              <div style={{ fontSize: "0.65rem", color: "#444", marginTop: "6px", letterSpacing: "0.5px" }}>
+                min hour day month weekday — times are UTC
+              </div>
+            </div>
+          )}
         </div>
-        <button style={btnPrimary} onClick={() => setStep("onChange")}><span>Continue</span><span>→</span></button>
+        <button style={{ ...btnPrimary, opacity: canContinue ? 1 : 0.4, cursor: canContinue ? "pointer" : "not-allowed" }} disabled={!canContinue} onClick={() => setStep("onChange")}><span>Continue</span><span>→</span></button>
       </div>
     </div>
   );
@@ -123,7 +145,7 @@ const DigestSetupModal = ({
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <button style={{ ...btnPrimary, background: sameOnChange === true ? "#00ff88" : "#111", color: sameOnChange === true ? "#001a0d" : "#555", border: `1px solid ${sameOnChange === true ? "#00ff88" : "#1a1a1a"}` }}
             onClick={() => setSameOnChange(true)}>
-            <span>Keep {selectedFreq.short} — same schedule</span>
+            <span>Keep {effectiveShort} — same schedule</span>
             {sameOnChange === true && <span>◈</span>}
           </button>
           <button style={{ ...btnSecondary, border: `1px solid ${sameOnChange === false ? "#00ff88" : "#1a1a1a"}`, color: sameOnChange === false ? "#00ff88" : "#555", background: sameOnChange === false ? "#001a0d" : "transparent" }}
@@ -136,8 +158,8 @@ const DigestSetupModal = ({
           <button style={{ ...btnPrimary, marginTop: "16px" }} onClick={() => {
             onSave({
               enabled: true,
-              frequency: selectedFreq.cron,
-              frequencyLabel: selectedFreq.label,
+              frequency: effectiveCron,
+              frequencyLabel: effectiveLabel,
               sameOnChange: sameOnChange!,
               watchlist: initialSymbols,
             });
@@ -601,7 +623,7 @@ export default function Dashboard() {
 
       {/* ── Header ── */}
       <header style={{ borderBottom: "1px solid #0e0e0e" }}>
-        <div className="header-inner">
+        <div className="header-inner" style={{ position: "relative" }}>
           <div className="header-left">
             <div>
               <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>MARKET ANALYTICS</div>
@@ -609,14 +631,12 @@ export default function Dashboard() {
                 RSI · MACD · <span style={{ color: "#00ff88" }}>AI SIGNALS</span>
               </h1>
             </div>
-            <div className="header-tag" style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-              {lastUpdated && (
-                <span style={{ fontSize: "0.65rem", color: "#222", whiteSpace: "nowrap", borderLeft: "1px solid #111", paddingLeft: "12px" }}>
-                  {new Date(lastUpdated).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              )}
-            </div>
           </div>
+          {lastUpdated && (
+            <span style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", fontSize: "0.65rem", color: "#222", whiteSpace: "nowrap", pointerEvents: "none" }}>
+              {new Date(lastUpdated).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
           <div className="header-right">
             {keyDecided && (
               <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); persistSettings("", "rule-based"); }}
