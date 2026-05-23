@@ -18,7 +18,7 @@ export default function LoginPage() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace("/");
+      if (user) router.replace("/app");
     });
   }, [router]);
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) { setError(error.message); setLoading(false); }
-      else router.replace("/");
+      else router.replace("/app");
     } else {
       const { error } = await supabase.auth.signUp({
         email,
