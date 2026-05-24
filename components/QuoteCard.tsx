@@ -179,7 +179,7 @@ export default function QuoteCard({ quote, onClick, selected, inWatchlist, onAdd
                 placeholder="target price"
                 style={{ background: "#0a0a0a", border: "1px solid #2a2a2a", color: "#ccc", fontFamily: "'Space Mono', monospace", fontSize: "0.68rem", padding: "3px 8px", width: "90px", outline: "none" }}
               />
-              <button onClick={commitTarget} style={{ background: "transparent", border: "none", color: "#00ff8866", cursor: "pointer", fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", padding: "0 4px" }}>set</button>
+              <button onClick={commitTarget} style={{ background: "transparent", border: "1px solid #00ff8830", color: "#00ff88", cursor: "pointer", fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", padding: "2px 8px" }}>set</button>
               <button onClick={e => { e.stopPropagation(); setEditingTarget(false); setTargetInput(""); }} style={{ background: "transparent", border: "none", color: "#333", cursor: "pointer", fontSize: "0.75rem", padding: 0 }}>×</button>
             </>
           ) : targetPrice != null ? (
@@ -191,9 +191,9 @@ export default function QuoteCard({ quote, onClick, selected, inWatchlist, onAdd
               <button onClick={clearTarget} style={{ background: "transparent", border: "none", color: "#333", cursor: "pointer", fontSize: "0.75rem", padding: "0 0 0 2px", lineHeight: 1 }}>×</button>
             </>
           ) : (
-            <button onClick={openTargetEdit} style={{ background: "transparent", border: "none", color: "#2a2a2a", cursor: "pointer", fontFamily: "'Space Mono', monospace", fontSize: "0.62rem", padding: 0, letterSpacing: "1px", transition: "color 0.15s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#2a2a2a"; }}>
+            <button onClick={openTargetEdit} style={{ background: "transparent", border: "1px solid #1e1e1e", color: "#444", cursor: "pointer", fontFamily: "'Space Mono', monospace", fontSize: "0.62rem", padding: "3px 8px", letterSpacing: "1px", transition: "color 0.15s, border-color 0.15s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#00ff88"; (e.currentTarget as HTMLElement).style.borderColor = "#00ff8840"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#444"; (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; }}>
               + set target
             </button>
           )}

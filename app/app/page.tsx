@@ -814,7 +814,7 @@ export default function Dashboard() {
                 MARKET ANALYSIS
               </h1>
             </div>
-            <div className="header-tag" style={{ display: "flex", alignItems: "center" }}>
+            <div className="header-tag hide-mobile" style={{ display: "flex", alignItems: "center" }}>
               {lastUpdated && (
                 <span style={{ fontSize: "0.65rem", color: "#222", whiteSpace: "nowrap", borderLeft: "1px solid #111", paddingLeft: "12px" }}>
                   {new Date(lastUpdated).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
@@ -825,6 +825,7 @@ export default function Dashboard() {
           <div className="header-right">
             {keyDecided && (
               <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); persistSettings("", "rule-based"); }}
+                className="hide-mobile"
                 style={{ fontSize: "0.6rem", color: apiKey.trim() ? "#00ff8866" : "#2a2a2a", background: "transparent", border: `1px solid ${apiKey.trim() ? "#00ff8820" : "#141414"}`, padding: "5px 10px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer", whiteSpace: "nowrap" }}>
                 {apiKey.trim() ? "◈ Claude AI" : "◈ Rule-based"}
               </button>
@@ -840,9 +841,10 @@ export default function Dashboard() {
               {user.user_metadata?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.user_metadata.avatar_url} alt="avatar"
+                  className="hide-mobile"
                   style={{ width: "32px", height: "32px", border: "1px solid #1e1e1e", marginRight: "4px", objectFit: "cover" }} />
               ) : (
-                <div style={{ width: "32px", height: "32px", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88", marginRight: "4px" }}>
+                <div className="hide-mobile" style={{ width: "32px", height: "32px", background: "#001a0d", border: "1px solid #00ff8820", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", color: "#00ff88", marginRight: "4px" }}>
                   {(user.email ?? "?")[0].toUpperCase()}
                 </div>
               )}
