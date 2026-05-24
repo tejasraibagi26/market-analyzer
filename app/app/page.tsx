@@ -940,11 +940,11 @@ export default function Dashboard() {
       <div className="main-scroll-wrapper">
       <main className="main-inner">
         {triggeredAlerts.length > 0 && !alertBannerDismissed && (
-          <div style={{ border: "1px solid #ffd70033", background: "#ffd7000a", padding: "12px 16px", color: "#ffd700", fontSize: "0.75rem", marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-            <span>
+          <div style={{ border: "1px solid #ffd70033", background: "#ffd7000a", padding: "12px 16px", color: "#ffd700", fontSize: "0.75rem", marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ flex: 1 }}>
               ⊙ {triggeredAlerts.map(a => `${a.symbol} hit $${a.targetPrice.toFixed(2)} (now $${a.currentPrice.toFixed(2)})`).join(" · ")} — alert email will send on next check
             </span>
-            <button onClick={() => setAlertBannerDismissed(true)} style={{ background: "transparent", border: "none", color: "#ffd70066", cursor: "pointer", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", padding: 0, whiteSpace: "nowrap" }}>dismiss ×</button>
+            <button onClick={() => setAlertBannerDismissed(true)} style={{ background: "transparent", border: "none", color: "#ffd70066", cursor: "pointer", fontSize: "1rem", padding: 0, lineHeight: 1, flexShrink: 0 }}>✕</button>
           </div>
         )}
         {error && (
