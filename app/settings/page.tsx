@@ -116,12 +116,12 @@ export default function SettingsPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505", color: "#eee", fontFamily: mono }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap'); *, *::before, *::after { box-sizing: border-box; }`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap'); *, *::before, *::after { box-sizing: border-box; } @media (max-width: 768px) { .settings-main, header > div { max-width: 100% !important; padding-left: 16px !important; padding-right: 16px !important; } }`}</style>
       {showApiKeyHelp && <ApiKeyHelpModal />}
 
       {/* Header */}
       <header style={{ borderBottom: "1px solid #0e0e0e" }}>
-        <div style={{ maxWidth: "min(600px, 100%)", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+        <div style={{ maxWidth: "75vw", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
           <div>
             <div style={{ fontSize: "0.60rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "3px" }}>MARKET ANALYTICS</div>
             <h1 style={{ fontFamily: bebas, fontSize: "1.6rem", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>SETTINGS</h1>
@@ -146,7 +146,7 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: "min(600px, 100%)", margin: "0 auto", padding: "32px 24px" }}>
+      <main className="settings-main" style={{ maxWidth: "75vw", margin: "0 auto", padding: "32px 24px" }}>
         <button onClick={() => router.push("/app")}
           style={{ background: "transparent", border: "none", color: "#333", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer", letterSpacing: "1px", padding: "0 0 24px 0", display: "block" }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}

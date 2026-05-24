@@ -756,7 +756,7 @@ export default function Dashboard() {
           <div className="header-left">
             <div>
               <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>MARKET ANALYTICS</div>
-              <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1.4rem,3vw,2rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>
+              <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1rem,3vw,2rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff", whiteSpace: "nowrap" }}>
                 MARKET ANALYSIS
               </h1>
             </div>
@@ -853,10 +853,6 @@ export default function Dashboard() {
               </div>
             )}
             <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
-            <button onClick={handleEmailDigestClick} disabled={sendingEmail || quotes.length === 0}
-              style={{ width: "100%", background: sendingEmail ? "#0a0a0a" : emailStatus === "sent" ? "#001408" : emailStatus === "error" ? "#140000" : "transparent", color: sendingEmail ? "#333" : emailStatus === "sent" ? "#00ff88" : emailStatus === "error" ? "#ff4444" : "#2e2e2e", border: `1px solid ${emailStatus === "sent" ? "#00ff8820" : emailStatus === "error" ? "#ff444420" : "#111"}`, padding: "11px", fontFamily: "'Space Mono', monospace", fontWeight: "700", fontSize: "0.72rem", letterSpacing: "1px", cursor: sendingEmail || quotes.length === 0 ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
-              {sendingEmail ? "Sending..." : emailStatus === "sent" ? "✓ Email Sent" : emailStatus === "error" ? "✗ Send Failed" : "✉ Email Digest"}
-            </button>
           </aside>
 
           {/* ── Main content ── */}
