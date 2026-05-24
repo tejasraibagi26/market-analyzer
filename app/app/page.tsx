@@ -833,15 +833,22 @@ export default function Dashboard() {
             {keyDecided && (
               <button onClick={() => { setKeyDecided(false); setApiKey(""); clearKey(); persistSettings("", "rule-based"); }}
                 className="hide-mobile"
-                style={{ fontSize: "0.6rem", color: apiKey.trim() ? "#00ff8866" : "#2a2a2a", background: "transparent", border: `1px solid ${apiKey.trim() ? "#00ff8820" : "#141414"}`, padding: "5px 10px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer", whiteSpace: "nowrap" }}>
+                style={{ height: "32px", fontSize: "0.6rem", color: apiKey.trim() ? "#00ff8866" : "#2a2a2a", background: "transparent", border: `1px solid ${apiKey.trim() ? "#00ff8820" : "#141414"}`, padding: "0 10px", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", cursor: "pointer", whiteSpace: "nowrap" }}>
                 {apiKey.trim() ? "◈ Claude AI" : "◈ Rule-based"}
               </button>
             )}
             <button onClick={fetchQuotes} disabled={loadingQuotes}
-              style={{ background: "transparent", border: "1px solid #141414", color: loadingQuotes ? "#222" : "#444", padding: "6px 12px", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: loadingQuotes ? "not-allowed" : "pointer", whiteSpace: "nowrap", transition: "border-color 0.15s" }}
+              style={{ height: "32px", width: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "1px solid #141414", color: loadingQuotes ? "#222" : "#444", padding: 0, fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", cursor: loadingQuotes ? "not-allowed" : "pointer", flexShrink: 0, transition: "border-color 0.15s" }}
               onMouseEnter={e => { if (!loadingQuotes) (e.currentTarget as HTMLElement).style.borderColor = "#2a2a2a"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#141414"; }}>
-              {loadingQuotes ? "···" : "↻"}
+              {loadingQuotes ? (
+                <span style={{ letterSpacing: "2px" }}>···</span>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+              )}
             </button>
             {/* User avatar + icon actions */}
             <div style={{ display: "flex", alignItems: "center", gap: "4px", borderLeft: "1px solid #111", paddingLeft: "10px" }}>
