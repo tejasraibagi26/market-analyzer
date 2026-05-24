@@ -482,6 +482,8 @@ export default function Dashboard() {
     }, 800);
   }, [user]);
 
+  const fetchQuotesRef = useRef<() => Promise<void>>(async () => {});
+
   const fetchQuotes = useCallback(async () => {
     if (symbols.length === 0) { setQuotes([]); return; }
     setLoadingQuotes(true);
@@ -535,7 +537,12 @@ export default function Dashboard() {
     }
   }, [symbols, selectedSymbol, syncItems]);
 
-  useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
+  // Keep ref in sync so the effect below can always call the latest version
+  fetchQuotesRef.current = fetchQuotes;
+
+  // Only re-fetch when the symbols list actually changes, not on every fetchQuotes reference change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchQuotesRef.current(); }, [symbols.join(",")]);
 
   // Detect watchlist change and re-prompt if user opted in to "ask me again"
   useEffect(() => {
