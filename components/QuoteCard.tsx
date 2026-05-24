@@ -71,7 +71,7 @@ function TargetModal({ quote, targetPrice, onSetTarget, onClose }: {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && valid) commit(); if (e.key === "Escape") onClose(); }}
                 placeholder="0.00"
-                style={{ flex: 1, background: "transparent", border: "none", color: "#e0e0e0", fontFamily: "'Space Mono', monospace", fontSize: "0.85rem", padding: "10px 10px 10px 0", outline: "none", width: 0 }}
+                style={{ flex: 1, background: "transparent", border: "none", color: "#e0e0e0", fontFamily: "'Space Mono', monospace", fontSize: "0.85rem", padding: "10px 10px 10px 0", outline: "none", width: 0, MozAppearance: "textfield" } as React.CSSProperties}
               />
             </div>
           </div>
@@ -180,27 +180,11 @@ export default function QuoteCard({ quote, onClick, selected, inWatchlist, onAdd
         {/* Left accent bar */}
         <div style={{ position: "absolute", top: 0, left: 0, width: "2px", height: "100%", background: targetHit ? "#ffd700" : selected ? "#00ff88" : accent, opacity: selected || targetHit ? 1 : 0.25 }} />
 
-        {/* Top row: symbol + badges + price */}
+        {/* Top row: symbol + price */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", minWidth: 0 }}>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.25rem", letterSpacing: "2px", color: "#fff", flexShrink: 0 }}>
-              {quote.symbol.replace(".TO", "")}
-            </span>
-            <span style={{ fontSize: "0.58rem", padding: "2px 5px", border: "1px solid #1c1c1c", color: "#444", letterSpacing: "1px", flexShrink: 0 }}>
-              {quote.type.toUpperCase()}
-            </span>
-            {quote.currency === "CAD" && (
-              <span style={{ fontSize: "0.55rem", padding: "2px 5px", border: "1px solid #b8621822", background: "#b8621808", color: "#b86218", letterSpacing: "1px", flexShrink: 0 }}>
-                CA
-              </span>
-            )}
-            {targetHit && (
-              <span style={{ fontSize: "0.55rem", padding: "2px 5px", border: "1px solid #ffd70040", background: "#ffd70010", color: "#ffd700", letterSpacing: "1px", flexShrink: 0 }}>
-                TARGET
-              </span>
-            )}
-          </div>
-
+          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.25rem", letterSpacing: "2px", color: "#fff", flexShrink: 0, lineHeight: 1 }}>
+            {quote.symbol.replace(".TO", "")}
+          </span>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: "1rem", fontWeight: "700", color: "#f0f0f0", lineHeight: 1 }}>
               {currencyPrefix}{quote.price.toFixed(2)}
@@ -212,6 +196,23 @@ export default function QuoteCard({ quote, onClick, selected, inWatchlist, onAdd
               {isPositive ? "+" : ""}{currencyPrefix}{quote.change.toFixed(2)}
             </div>
           </div>
+        </div>
+
+        {/* Badges row */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "0.58rem", padding: "2px 5px", border: "1px solid #1c1c1c", color: "#444", letterSpacing: "1px" }}>
+            {quote.type.toUpperCase()}
+          </span>
+          {quote.currency === "CAD" && (
+            <span style={{ fontSize: "0.55rem", padding: "2px 5px", border: "1px solid #b8621822", background: "#b8621808", color: "#b86218", letterSpacing: "1px" }}>
+              CA
+            </span>
+          )}
+          {targetHit && (
+            <span style={{ fontSize: "0.55rem", padding: "2px 5px", border: "1px solid #ffd70040", background: "#ffd70010", color: "#ffd700", letterSpacing: "1px" }}>
+              TARGET
+            </span>
+          )}
         </div>
 
         {/* Company name */}
@@ -272,9 +273,8 @@ export default function QuoteCard({ quote, onClick, selected, inWatchlist, onAdd
               }}
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="6" />
-                <circle cx="12" cy="12" r="2" />
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
               {targetPrice != null ? `${currencyPrefix}${targetPrice.toFixed(2)}` : "alert"}
             </button>
