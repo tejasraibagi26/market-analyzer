@@ -2,12 +2,17 @@
 
 import { useState, KeyboardEvent } from "react";
 import { DEFAULT_WATCHLIST, CANADIAN_WATCHLIST, TOP_PICKS } from "@/lib/constants";
+import type { WatchlistItem } from "@/types/market";
 
 interface Props {
-  symbols: string[];
-  onChange: (symbols: string[]) => void;
+  items: WatchlistItem[];
+  onChange: (items: WatchlistItem[]) => void;
   onSchedule?: () => void;
   scheduleLabel?: string;
+}
+
+function makeItem(symbol: string): WatchlistItem {
+  return { symbol, addedAt: new Date().toISOString() };
 }
 
 const QUICK_GROUPS = [
@@ -16,21 +21,28 @@ const QUICK_GROUPS = [
   { label: "TOP PICKS", symbols: TOP_PICKS },
 ];
 
-export default function WatchlistInput({ symbols, onChange, onSchedule, scheduleLabel }: Props) {
+export default function WatchlistInput({ items, onChange, onSchedule, scheduleLabel }: Props) {
   const [input, setInput] = useState("");
+  const symbols = items.map((i) => i.symbol);
 
   const add = (sym: string) => {
     const s = sym.trim().toUpperCase();
-    if (s && !symbols.includes(s)) onChange([...symbols, s]);
+    if (s && !symbols.includes(s)) onChange([...items, makeItem(s)]);
   };
 
   const addFromInput = () => { add(input); setInput(""); };
 
-  const remove = (sym: string) => onChange(symbols.filter(s => s !== sym));
+  const remove = (sym: string) => onChange(items.filter(i => i.symbol !== sym));
   const clear   = () => onChange([]);
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addFromInput(); }
+  };
+
+  const addGroup = (groupSymbols: string[]) => {
+    const existing = new Set(symbols);
+    const toAdd = groupSymbols.filter(s => !existing.has(s)).map(makeItem);
+    onChange([...items, ...toAdd]);
   };
 
   return (
@@ -39,7 +51,7 @@ export default function WatchlistInput({ symbols, onChange, onSchedule, schedule
       <div style={{ marginBottom: "14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
           <span style={{ fontSize: "0.7rem", color: "#bebebe", letterSpacing: "2px" }}>◈ WATCHLIST</span>
-          {symbols.length > 0 && (
+          {items.length > 0 && (
             <button onClick={clear} style={{ fontSize: "0.62rem", color: "#333", background: "transparent", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace", letterSpacing: "1px", padding: 0 }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#888"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#333"; }}>
@@ -83,7 +95,7 @@ export default function WatchlistInput({ symbols, onChange, onSchedule, schedule
         <div style={{ fontSize: "0.62rem", color: "#333", letterSpacing: "1px", marginBottom: "8px" }}>Quick add</div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           {QUICK_GROUPS.map(g => (
-            <button key={g.label} onClick={() => onChange([...new Set([...symbols, ...g.symbols])])}
+            <button key={g.label} onClick={() => addGroup(g.symbols)}
               style={{ padding: "5px 12px", background: "transparent", border: "1px solid #1a1a1a", color: "#666", fontFamily: "'Space Mono', monospace", fontSize: "0.7rem", cursor: "pointer", letterSpacing: "1px", transition: "all 0.15s" }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#00ff8844"; (e.currentTarget as HTMLElement).style.color = "#00ff88"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#1a1a1a"; (e.currentTarget as HTMLElement).style.color = "#666"; }}
@@ -95,16 +107,19 @@ export default function WatchlistInput({ symbols, onChange, onSchedule, schedule
       </div>
 
       {/* Current symbols */}
-      {symbols.length === 0 ? (
+      {items.length === 0 ? (
         <div style={{ fontSize: "0.7rem", color: "#222", textAlign: "center", padding: "12px 0" }}>
           No tickers added yet
         </div>
       ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {symbols.map(sym => (
-            <span key={sym} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 10px", border: "1px solid #1a1a1a", background: "#050505", fontSize: "0.75rem", color: "#999", fontFamily: "'Space Mono', monospace" }}>
-              {sym}
-              <button onClick={() => remove(sym)} style={{ background: "transparent", border: "none", color: "#444", cursor: "pointer", fontSize: "1rem", padding: 0, lineHeight: 1 }}>×</button>
+          {items.map(item => (
+            <span key={item.symbol} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 10px", border: "1px solid #1a1a1a", background: "#050505", fontSize: "0.75rem", color: "#999", fontFamily: "'Space Mono', monospace" }}>
+              {item.symbol}
+              {item.targetPrice != null && (
+                <span style={{ fontSize: "0.6rem", color: "#00ff8855", letterSpacing: "0.5px" }}>⊙</span>
+              )}
+              <button onClick={() => remove(item.symbol)} style={{ background: "transparent", border: "none", color: "#444", cursor: "pointer", fontSize: "1rem", padding: 0, lineHeight: 1 }}>×</button>
             </span>
           ))}
         </div>

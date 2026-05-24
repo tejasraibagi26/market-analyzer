@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Quote, AnalysisResult } from "@/types/market";
+import type { Quote, AnalysisResult, WatchlistItem } from "@/types/market";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import QuoteCard from "@/components/QuoteCard";
 import PriceChart from "@/components/PriceChart";
@@ -395,8 +395,11 @@ export default function Dashboard() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
 
-  const [symbols, setSymbols] = useState<string[]>([]);
+  const [items, setItems] = useState<WatchlistItem[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [triggeredAlerts, setTriggeredAlerts] = useState<{ symbol: string; currentPrice: number; targetPrice: number }[]>([]);
+  const [alertBannerDismissed, setAlertBannerDismissed] = useState(false);
+  const alertScheduledRef = useRef(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("");
   const [analysis, setAnalysis] = useState<(AnalysisResult & { usedAI?: boolean }) | null>(null);
   const [loadingQuotes, setLoadingQuotes] = useState(false);
@@ -409,6 +412,8 @@ export default function Dashboard() {
   const [keyDecided, setKeyDecided] = useState(false);
   const [moversOpen, setMoversOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"market" | "analysis">("market");
+  const symbols = items.map((i) => i.symbol);
+
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState<"idle" | "sent" | "error">("idle");
   const [pendingEmailDigest, setPendingEmailDigest] = useState(false);
@@ -430,10 +435,13 @@ export default function Dashboard() {
       fetch("/api/user/watchlist").then(r => r.json()),
       fetch("/api/user/settings").then(r => r.json()),
     ]).then(([watchlistData, settingsData]) => {
-      if (Array.isArray(watchlistData.symbols) && watchlistData.symbols.length > 0) {
-        setSymbols(watchlistData.symbols);
+      if (Array.isArray(watchlistData.items) && watchlistData.items.length > 0) {
+        setItems(watchlistData.items);
+        if (watchlistData.items.some((i: WatchlistItem) => i.targetPrice != null)) {
+          alertScheduledRef.current = true;
+        }
       } else {
-        setSymbols(DEFAULT_WATCHLIST);
+        setItems(DEFAULT_WATCHLIST.map(s => ({ symbol: s, addedAt: new Date().toISOString() })));
       }
       if (settingsData.anthropicKey) {
         setApiKey(settingsData.anthropicKey);
@@ -456,20 +464,20 @@ export default function Dashboard() {
       }
       setDbLoaded(true);
     }).catch(() => {
-      setSymbols(DEFAULT_WATCHLIST);
+      setItems(DEFAULT_WATCHLIST.map(s => ({ symbol: s, addedAt: new Date().toISOString() })));
       setDbLoaded(true);
     });
   }, [user]);
 
   // Debounced watchlist sync to DB
-  const syncWatchlist = useCallback((syms: string[]) => {
+  const syncItems = useCallback((newItems: WatchlistItem[]) => {
     if (!user) return;
     if (watchlistSyncRef.current) clearTimeout(watchlistSyncRef.current);
     watchlistSyncRef.current = setTimeout(() => {
       fetch("/api/user/watchlist", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbols: syms }),
+        body: JSON.stringify({ items: newItems }),
       }).catch(() => {});
     }, 800);
   }, [user]);
@@ -488,9 +496,9 @@ export default function Dashboard() {
       // Auto-correct symbols (e.g. XEQT → XEQT.TO)
       const resolved: Record<string, string> = data.resolved ?? {};
       if (Object.keys(resolved).length > 0) {
-        setSymbols(prev => {
-          const updated = prev.map(s => resolved[s] ?? s);
-          syncWatchlist(updated);
+        setItems(prev => {
+          const updated = prev.map(item => ({ ...item, symbol: resolved[item.symbol] ?? item.symbol }));
+          syncItems(updated);
           return updated;
         });
       }
@@ -501,12 +509,31 @@ export default function Dashboard() {
         setError(`Could not load: ${failed.join(", ")} — ticker not found on Yahoo Finance`);
       }
       if (!selectedSymbol && data.quotes.length > 0) setSelectedSymbol(data.quotes[0].symbol);
+
+      // Check for crossed price targets
+      setItems(prev => {
+        const triggered = prev
+          .filter(item => item.targetPrice != null)
+          .flatMap(item => {
+            const q = (data.quotes as Quote[]).find(q => q.symbol === item.symbol);
+            if (!q || item.targetPrice == null) return [];
+            const crossed = q.price >= item.targetPrice;
+            const nearby = Math.abs(q.price - item.targetPrice) / item.targetPrice <= 0.02;
+            if (crossed || nearby) return [{ symbol: item.symbol, currentPrice: q.price, targetPrice: item.targetPrice }];
+            return [];
+          });
+        if (triggered.length > 0) {
+          setTriggeredAlerts(triggered);
+          setAlertBannerDismissed(false);
+        }
+        return prev;
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch quotes");
     } finally {
       setLoadingQuotes(false);
     }
-  }, [symbols, selectedSymbol]);
+  }, [symbols, selectedSymbol, syncItems]);
 
   useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
 
@@ -522,6 +549,33 @@ export default function Dashboard() {
       }
     }
   }, [symbols, digestPrefs]);
+
+  const handleSetTarget = useCallback((symbol: string, price: number | null) => {
+    setItems(prev => {
+      const updated: WatchlistItem[] = prev.map(item => {
+        if (item.symbol !== symbol) return item;
+        if (price != null) return { ...item, targetPrice: price };
+        const { targetPrice: _removed, ...rest } = item;
+        void _removed;
+        return rest;
+      });
+      syncItems(updated);
+
+      // Register alert cron job on first target set
+      const hasAnyTarget = updated.some(i => i.targetPrice != null);
+      if (hasAnyTarget && !alertScheduledRef.current) {
+        alertScheduledRef.current = true;
+        fetch("/api/alerts/schedule", { method: "POST" }).catch(() => {});
+      }
+      // Deregister if no targets remain
+      if (!hasAnyTarget && alertScheduledRef.current) {
+        alertScheduledRef.current = false;
+        fetch("/api/alerts/schedule", { method: "DELETE" }).catch(() => {});
+      }
+
+      return updated;
+    });
+  }, [syncItems]);
 
   const runAnalysis = async (key: string) => {
     setLoadingAnalysis(true);
@@ -736,7 +790,7 @@ export default function Dashboard() {
       {showKeyModal && <ApiKeyModal onSave={onModalSave} onSkip={onModalSkip} savedKey={apiKey} />}
       {showDigestSetup && !showKeyModal && (
         <DigestSetupModal
-          initialSymbols={symbols}
+          initialSymbols={items.map(i => i.symbol)}
           onSave={handleDigestSave}
           onSkip={() => {
             setDigestPrefs(null);
@@ -822,6 +876,14 @@ export default function Dashboard() {
 
       <div className="main-scroll-wrapper">
       <main className="main-inner">
+        {triggeredAlerts.length > 0 && !alertBannerDismissed && (
+          <div style={{ border: "1px solid #ffd70033", background: "#ffd7000a", padding: "12px 16px", color: "#ffd700", fontSize: "0.75rem", marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+            <span>
+              ⊙ {triggeredAlerts.map(a => `${a.symbol} hit $${a.targetPrice.toFixed(2)} (now $${a.currentPrice.toFixed(2)})`).join(" · ")} — alert email will send on next check
+            </span>
+            <button onClick={() => setAlertBannerDismissed(true)} style={{ background: "transparent", border: "none", color: "#ffd70066", cursor: "pointer", fontFamily: "'Space Mono', monospace", fontSize: "0.72rem", padding: 0, whiteSpace: "nowrap" }}>dismiss ×</button>
+          </div>
+        )}
         {error && (
           <div style={{ border: "1px solid #ff444433", background: "#ff44440a", padding: "14px 18px", color: "#ff4444", fontSize: "0.78rem", marginBottom: "20px" }}>⚠ {error}</div>
         )}
@@ -829,7 +891,7 @@ export default function Dashboard() {
         <div className="layout">
           {/* ── Desktop sidebar ── */}
           <aside className="sidebar">
-            <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); syncWatchlist(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
+            <WatchlistInput items={items} onChange={newItems => { setItems(newItems); syncItems(newItems); setAnalysis(null); setMobileView("market"); if (newItems.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
             {quotes.length > 0 && (
               <div style={{ border: "1px solid #111", background: "#060606", padding: "14px 16px" }}>
                 <div style={{ fontSize: "0.6rem", color: "#2a2a2a", letterSpacing: "2px", marginBottom: "10px" }}>TOP MOVERS</div>
@@ -860,7 +922,7 @@ export default function Dashboard() {
 
             {/* Mobile: watchlist + analyze button at top */}
             <div style={{ display: "none" }} className="mobile-watchlist-wrapper">
-              <WatchlistInput symbols={symbols} onChange={s => { setSymbols(s); syncWatchlist(s); setAnalysis(null); setMobileView("market"); if (s.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
+              <WatchlistInput items={items} onChange={newItems => { setItems(newItems); syncItems(newItems); setAnalysis(null); setMobileView("market"); if (newItems.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
             </div>
             <div className="mobile-analyze">
               <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
@@ -883,7 +945,9 @@ export default function Dashboard() {
                         selected={selectedSymbol === quote.symbol}
                         onClick={() => setSelectedSymbol(quote.symbol)}
                         inWatchlist={symbols.includes(quote.symbol)}
-                        onAddToWatchlist={sym => setSymbols(prev => prev.includes(sym) ? prev : [...prev, sym])}
+                        onAddToWatchlist={sym => setItems(prev => prev.some(i => i.symbol === sym) ? prev : [...prev, { symbol: sym, addedAt: new Date().toISOString() }])}
+                        targetPrice={items.find(i => i.symbol === quote.symbol)?.targetPrice}
+                        onSetTarget={handleSetTarget}
                       />
                     ))}
                   </div>

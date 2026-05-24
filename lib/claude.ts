@@ -52,14 +52,14 @@ function buildPrompt(assets: AssetInput[]): string {
     (topPickSet.has(q.symbol) ? "|TOP_PICK" : "")
   ).join("\n");
 
-  return `You are a concise market analyst. Given this pipe-delimited data, output ONLY a JSON object.
+  return `You are a long-term investor analyst (3–5 year horizon). Given this pipe-delimited data, output ONLY a JSON object.
 
 ${rows}
 
 JSON schema (no markdown, no backticks):
-{"marketOutlook":"2 sentences","suggestions":[{"symbol":"","action":"buy|hold|sell|watch","sentiment":"bullish|bearish|neutral","confidence":0-100,"reasoning":"2 sentences using specific numbers","keyPoints":["max 3"],"risks":["max 2"],"targetPrice":null}]}
+{"marketOutlook":"2 sentences","suggestions":[{"symbol":"","action":"buy|hold|sell|watch","sentiment":"bullish|bearish|neutral","confidence":0-100,"reasoning":"2 sentences focused on long-term fundamentals using specific numbers like PE, dividend yield, and 52-week position","keyPoints":["max 3"],"risks":["max 2"],"targetPrice":null}]}
 
-Rules: rank by conviction (buy first), reference actual indicator values, TOP_PICK assets get extra weight.`;
+Rules: rank by long-term conviction (buy first). Focus on PE ratio, dividend yield, 52W price position, and SMA200 trend — NOT short-term signals like RSI or MACD. Sentiment reflects long-term outlook, not short-term momentum. TOP_PICK assets get extra weight.`;
 }
 
 export async function generateSuggestionsWithClaude(
