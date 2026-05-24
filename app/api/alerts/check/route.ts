@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { Receiver } from "@upstash/qstash";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { WatchlistItem } from "@/types/market";
 import { fetchQuotes } from "@/lib/marketData";
@@ -22,13 +23,21 @@ function coerceItems(raw: unknown): WatchlistItem[] {
 }
 
 export async function POST(request: NextRequest) {
-  // Verify shared secret from the email-service caller
-  const secret = process.env.ALERT_SERVICE_SECRET;
-  if (secret) {
-    const authHeader = request.headers.get("x-alert-secret") ?? request.headers.get("authorization");
-    const provided = authHeader?.replace(/^Bearer\s+/i, "");
-    if (provided !== secret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const qstashSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+  const qstashNextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+
+  if (qstashSigningKey && qstashNextSigningKey) {
+    const receiver = new Receiver({ currentSigningKey: qstashSigningKey, nextSigningKey: qstashNextSigningKey });
+    const body = await request.text();
+    const isValid = await receiver.verify({ signature: request.headers.get("upstash-signature") ?? "", body }).catch(() => false);
+    if (!isValid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } else {
+    // fallback for non-QStash callers (e.g. manual curl with secret header)
+    const secret = process.env.ALERT_SERVICE_SECRET;
+    if (secret) {
+      const authHeader = request.headers.get("x-alert-secret") ?? request.headers.get("authorization");
+      const provided = authHeader?.replace(/^Bearer\s+/i, "");
+      if (provided !== secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
@@ -68,8 +77,11 @@ export async function POST(request: NextRequest) {
       const quote = quotes.find((q) => q.symbol === item.symbol);
       if (!quote || item.targetPrice == null) continue;
       // Alert if current price has reached or crossed the target (in either direction within 2% or fully crossed)
-      const crossed = quote.price >= item.targetPrice;
-      const nearBy = Math.abs(quote.price - item.targetPrice) / item.targetPrice <= 0.02;
+      const diff = Math.abs(quote.price - item.targetPrice) / item.targetPrice;
+      const nearBy = diff <= 0.02;
+      const crossed = item.targetDirection === "below"
+        ? quote.price <= item.targetPrice
+        : quote.price >= item.targetPrice;
       if (crossed || nearBy) {
         triggers.push({
           symbol: item.symbol,
