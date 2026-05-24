@@ -757,7 +757,7 @@ export default function Dashboard() {
             <div>
               <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>MARKET ANALYTICS</div>
               <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1.4rem,3vw,2rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff" }}>
-                RSI · MACD · <span style={{ color: "#00ff88" }}>AI SIGNALS</span>
+                MARKET ANALYSIS
               </h1>
             </div>
             <div className="header-tag" style={{ display: "flex", alignItems: "center" }}>
