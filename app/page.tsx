@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
+
 
 const mono = "'Space Mono', monospace";
 const bebas = "'Bebas Neue', sans-serif";
@@ -34,13 +35,13 @@ const TICKERS = ["AAPL", "TSLA", "NVDA", "SPY", "QQQ", "MSFT", "AMZN", "BTC-USD"
 
 export default function LandingPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace("/app");
-    });
-  }, [router]);
+    if (!loading && user) router.replace("/app");
+  }, [loading, user, router]);
+
+  if (loading) return null;
 
   return (
     <div style={{ minHeight: "100vh", background: "#050505", color: "#eee", fontFamily: mono, overflowX: "hidden" }}>

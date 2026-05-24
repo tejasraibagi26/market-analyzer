@@ -82,12 +82,38 @@ export default function PriceChart({ symbol }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: "32px", height: "32px", border: "2px solid #111", borderTop: `2px solid #00ff88`, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        <div style={{ height: "220px", position: "relative", overflow: "hidden" }}>
+          <svg width="100%" height="100%" viewBox="0 0 600 220" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, opacity: 0.07 }}>
+            <polyline points="0,160 60,140 120,155 180,110 240,90 300,105 360,75 420,85 480,60 540,70 600,45" fill="none" stroke="#00ff88" strokeWidth="1.5" />
+            {[50, 90, 130, 170].map(y => (
+              <line key={y} x1="0" y1={y} x2="600" y2={y} stroke="#0f0f0f" strokeWidth="1" />
+            ))}
+          </svg>
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "28px", height: "28px", border: "2px solid #111", borderTop: "2px solid #00ff88", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+          </div>
         </div>
       ) : data.length === 0 ? (
-        <div style={{ height: "200px", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontSize: "0.68rem", letterSpacing: "2px" }}>
-          NO DATA
+        <div style={{ height: "220px", position: "relative", overflow: "hidden" }}>
+          {/* Ghost chart lines */}
+          <svg width="100%" height="100%" viewBox="0 0 600 220" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, opacity: 0.12 }}>
+            <polyline points="0,160 60,140 120,155 180,110 240,90 300,105 360,75 420,85 480,60 540,70 600,45" fill="none" stroke="#00ff88" strokeWidth="1.5" />
+            <polyline points="0,160 60,140 120,155 180,110 240,90 300,105 360,75 420,85 480,60 540,70 600,45" fill="url(#ghostGrad)" stroke="none" />
+            <defs>
+              <linearGradient id="ghostGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00ff88" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#00ff88" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {/* Horizontal grid lines */}
+            {[50, 90, 130, 170].map(y => (
+              <line key={y} x1="0" y1={y} x2="600" y2={y} stroke="#0f0f0f" strokeWidth="1" />
+            ))}
+          </svg>
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <div style={{ fontSize: "0.62rem", color: "#1e1e1e", letterSpacing: "3px" }}>NO DATA</div>
+            <div style={{ fontSize: "0.58rem", color: "#161616", letterSpacing: "1px" }}>Historical data unavailable for this symbol</div>
+          </div>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={220}>

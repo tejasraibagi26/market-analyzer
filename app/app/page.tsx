@@ -644,12 +644,17 @@ export default function Dashboard() {
   const handleDigestSave = async (prefs: DigestPrefs) => {
     setDigestPrefs(prefs);
     setShowDigestSetup(false);
-    // Persist to DB (source of truth — localStorage no longer used)
-    fetch("/api/user/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ digestPrefs: prefs }),
-    }).catch(() => {});
+    // Persist to DB (source of truth)
+    try {
+      const res = await fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ digestPrefs: prefs }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Failed to save digest prefs");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save digest schedule");
+    }
     // Register the job with email-service
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
