@@ -77,11 +77,13 @@ export async function POST(request: NextRequest) {
       const quote = quotes.find((q) => q.symbol === item.symbol);
       if (!quote || item.targetPrice == null) continue;
       // Alert if current price has reached or crossed the target (in either direction within 2% or fully crossed)
-      const diff = Math.abs(quote.price - item.targetPrice) / item.targetPrice;
-      const nearBy = diff <= 0.02;
-      const crossed = item.targetDirection === "below"
+      const isBelow = item.targetDirection === "below";
+      const crossed = isBelow
         ? quote.price <= item.targetPrice
         : quote.price >= item.targetPrice;
+      const nearBy = !crossed &&
+        Math.abs(quote.price - item.targetPrice) / item.targetPrice <= 0.02 &&
+        (isBelow ? quote.price > item.targetPrice : quote.price < item.targetPrice);
       if (crossed || nearBy) {
         triggers.push({
           symbol: item.symbol,

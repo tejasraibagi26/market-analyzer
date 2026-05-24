@@ -1,5 +1,3 @@
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://market-analyzer-ruby.vercel.app";
-
 export interface AlertTrigger {
   symbol: string;
   currentPrice: number;
@@ -25,7 +23,7 @@ export function buildAlertEmailHtml(triggers: AlertTrigger[]): string {
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td style="vertical-align:top;">
-                <div style="font-family:'Courier New',Courier,monospace;font-size:18px;font-weight:700;color:#111827;letter-spacing:1px;">${symbol}</div>
+                <div style="font-family:'Courier New',Courier,monospace;font-size:18px;font-weight:700;color:#111827;letter-spacing:1px;">${symbol.replace(/\./g, "&#8203;.")}</div>
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6b7280;margin-top:3px;">Price ${hit} your target</div>
               </td>
               <td style="text-align:right;vertical-align:top;">
@@ -76,15 +74,6 @@ export function buildAlertEmailHtml(triggers: AlertTrigger[]): string {
             <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6b7280;line-height:1.6;">
               These targets have been cleared automatically. You can set new ones from the dashboard.
             </div>
-          </td>
-        </tr>
-
-        <!-- CTA -->
-        <tr>
-          <td style="padding:24px 32px;">
-            <a href="${APP_URL}/app" style="display:inline-block;background-color:#16a34a;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;padding:12px 24px;border-radius:4px;">
-              View Dashboard →
-            </a>
           </td>
         </tr>
 

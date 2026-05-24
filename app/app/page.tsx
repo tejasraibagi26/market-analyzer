@@ -561,10 +561,11 @@ export default function Dashboard() {
           .flatMap(item => {
             const q = (data.quotes as Quote[]).find(q => q.symbol === item.symbol);
             if (!q || item.targetPrice == null) return [];
-            const nearby = Math.abs(q.price - item.targetPrice) / item.targetPrice <= 0.02;
-            const crossed = item.targetDirection === "below"
-              ? q.price <= item.targetPrice
-              : q.price >= item.targetPrice;
+            const isBelow = item.targetDirection === "below";
+            const crossed = isBelow ? q.price <= item.targetPrice : q.price >= item.targetPrice;
+            const nearby = !crossed &&
+              Math.abs(q.price - item.targetPrice) / item.targetPrice <= 0.02 &&
+              (isBelow ? q.price > item.targetPrice : q.price < item.targetPrice);
             if (crossed || nearby) return [{ symbol: item.symbol, currentPrice: q.price, targetPrice: item.targetPrice }];
             return [];
           });
