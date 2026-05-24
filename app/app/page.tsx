@@ -58,18 +58,56 @@ const FREQUENCIES = [
 
 type Frequency = typeof FREQUENCIES[number];
 
-const TIMEZONES = [
-  { label: "UTC",              iana: "UTC",                    offset: 0 },
-  { label: "EST (UTC-5)",      iana: "America/New_York",       offset: -5 },
-  { label: "CST (UTC-6)",      iana: "America/Chicago",        offset: -6 },
-  { label: "MST (UTC-7)",      iana: "America/Denver",         offset: -7 },
-  { label: "PST (UTC-8)",      iana: "America/Los_Angeles",    offset: -8 },
-  { label: "IST (UTC+5:30)",   iana: "Asia/Kolkata",           offset: 5.5 },
-  { label: "CET (UTC+1)",      iana: "Europe/Paris",           offset: 1 },
-  { label: "GMT (UTC+0)",      iana: "Europe/London",          offset: 0 },
-  { label: "JST (UTC+9)",      iana: "Asia/Tokyo",             offset: 9 },
-  { label: "AEST (UTC+10)",    iana: "Australia/Sydney",       offset: 10 },
+const TIMEZONE_IANA_LIST = [
+  "UTC",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "America/Vancouver",
+  "Asia/Kolkata",
+  "Europe/Paris",
+  "Europe/London",
+  "Asia/Tokyo",
+  "Australia/Sydney",
 ];
+
+// Get the real current UTC offset (in fractional hours) for an IANA zone, accounting for DST
+function getCurrentOffsetHours(iana: string): number {
+  const now = new Date();
+  // Use Intl to get the UTC offset string like "GMT-5" or "GMT+5:30"
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: iana, timeZoneName: "shortOffset" })
+    .formatToParts(now);
+  const offsetStr = parts.find(p => p.type === "timeZoneName")?.value ?? "GMT+0";
+  // Parse "GMT+5:30", "GMT-5", "GMT+0" etc.
+  const match = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/);
+  if (!match) return 0;
+  const sign = match[1] === "+" ? 1 : -1;
+  const h = parseInt(match[2], 10);
+  const m = parseInt(match[3] ?? "0", 10);
+  return sign * (h + m / 60);
+}
+
+// Get the short abbreviation that reflects DST (e.g. "EDT", "PST", "IST")
+function getTzAbbr(iana: string): string {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: iana, timeZoneName: "short" })
+    .formatToParts(now);
+  return parts.find(p => p.type === "timeZoneName")?.value ?? iana;
+}
+
+function buildTzEntry(iana: string) {
+  const offset = getCurrentOffsetHours(iana);
+  const abbr = getTzAbbr(iana);
+  const sign = offset >= 0 ? "+" : "-";
+  const absH = Math.floor(Math.abs(offset));
+  const absM = Math.round((Math.abs(offset) - absH) * 60);
+  const utcStr = absM > 0 ? `UTC${sign}${absH}:${String(absM).padStart(2, "0")}` : `UTC${sign}${absH}`;
+  return { label: `${abbr} (${utcStr})`, iana, offset };
+}
+
+const TIMEZONES = TIMEZONE_IANA_LIST.map(buildTzEntry);
 
 // Convert local hour/minute to UTC hour/minute given a timezone offset (may include .5 for IST)
 function localToUtc(localHour: number, localMinute: number, offset: number): { utcHour: number; utcMinute: number } {
@@ -128,7 +166,11 @@ const DigestSetupModal = ({
   const [sameOnChange, setSameOnChange] = useState<boolean | null>(null);
   const [selectedTz, setSelectedTz] = useState(() => {
     const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return TIMEZONES.find(t => t.iana === browserTz) ?? TIMEZONES[0];
+    // Try exact IANA match first, then fall back to matching by current offset
+    const exactMatch = TIMEZONES.find(t => t.iana === browserTz);
+    if (exactMatch) return exactMatch;
+    const browserOffset = getCurrentOffsetHours(browserTz);
+    return TIMEZONES.find(t => t.offset === browserOffset) ?? TIMEZONES[0];
   });
 
   const isCustom = selectedFreq.daySpec === "custom";
