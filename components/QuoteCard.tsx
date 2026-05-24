@@ -11,13 +11,13 @@ interface Props {
   inWatchlist?: boolean;
   onAddToWatchlist?: (symbol: string) => void;
   targetPrice?: number;
-  onSetTarget?: (symbol: string, price: number | null) => void;
+  onSetTarget?: (symbol: string, price: number | null, currentPrice?: number) => void;
 }
 
 function TargetModal({ quote, targetPrice, onSetTarget, onClose }: {
   quote: Quote;
   targetPrice?: number;
-  onSetTarget: (symbol: string, price: number | null) => void;
+  onSetTarget: (symbol: string, price: number | null, currentPrice?: number) => void;
   onClose: () => void;
 }) {
   const [input, setInput] = useState(targetPrice != null ? String(targetPrice) : "");
@@ -30,7 +30,7 @@ function TargetModal({ quote, targetPrice, onSetTarget, onClose }: {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const commit = () => {
-    if (valid) { onSetTarget(quote.symbol, val); onClose(); }
+    if (valid) { onSetTarget(quote.symbol, val, quote.price); onClose(); }
   };
 
   const clear = () => { onSetTarget(quote.symbol, null); onClose(); };

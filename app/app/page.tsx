@@ -602,15 +602,14 @@ export default function Dashboard() {
     }
   }, [symbols, digestPrefs]);
 
-  const handleSetTarget = useCallback((symbol: string, price: number | null) => {
+  const handleSetTarget = useCallback((symbol: string, price: number | null, currentPrice?: number) => {
     setItems(prev => {
       const updated: WatchlistItem[] = prev.map(item => {
         if (item.symbol !== symbol) return item;
         if (price != null) {
-          const currentPrice = quotes.find(q => q.symbol === symbol)?.price;
-          const targetDirection = currentPrice != null
+          const targetDirection: "above" | "below" = currentPrice != null
             ? (price >= currentPrice ? "above" : "below")
-            : undefined;
+            : "above";
           return { ...item, targetPrice: price, targetDirection };
         }
         const { targetPrice: _removed, targetDirection: _dir, ...rest } = item;
