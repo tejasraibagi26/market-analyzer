@@ -793,13 +793,12 @@ export default function Dashboard() {
 
         .main-inner {
           max-width: 1400px; margin: 0 auto; padding: 20px 24px; width: 100%;
-          flex: 1; overflow-y: auto; overflow-x: clip;
         }
-        .main-scroll-wrapper { flex: 1; overflow-y: auto; overflow-x: clip; }
+        .main-scroll-wrapper { flex: 1; overflow-y: auto; overflow-x: clip; min-height: 0; }
 
         /* 2-column layout: sidebar | market+analysis */
         .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
-        .sidebar { display: flex; flex-direction: column; gap: 0; position: sticky; top: 0; height: calc(100vh - 110px); }
+        .sidebar { display: flex; flex-direction: column; gap: 0; position: sticky; top: 0; height: calc(100svh - 110px); overflow: hidden; }
         .sidebar-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 14px; min-height: 0; }
         .sidebar-footer { flex-shrink: 0; padding-top: 14px; }
         .analysis-col { display: none !important; }
