@@ -798,7 +798,7 @@ export default function Dashboard() {
 
         /* 2-column layout: sidebar | market+analysis */
         .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
-        .sidebar { display: flex; flex-direction: column; gap: 0; position: sticky; top: 0; height: calc(100svh - 110px); overflow: hidden; }
+        .sidebar { display: flex; flex-direction: column; gap: 0; position: sticky; top: 20px; height: calc(100svh - 130px); overflow: hidden; }
         .sidebar-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 14px; min-height: 0; }
         .sidebar-footer { flex-shrink: 0; }
         .analysis-col { display: none !important; }
