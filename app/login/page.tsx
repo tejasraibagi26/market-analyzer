@@ -67,8 +67,9 @@ export default function LoginPage() {
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <div style={{ fontSize: "0.65rem", color: "#00ff88", letterSpacing: "3px", marginBottom: "8px" }}>◈ Technical Analysis · Real-time Data</div>
           <h1 style={{ fontFamily: bebas, fontSize: "2.6rem", letterSpacing: "4px", margin: 0, background: "linear-gradient(135deg,#fff 0%,#555 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            MARKET<span style={{ WebkitTextFillColor: "#00ff88" }}> ANALYTICS</span>
+            MARKT
           </h1>
+          <div style={{ fontSize: "0.60rem", color: "#00ff8866", letterSpacing: "3px", marginTop: "4px" }}>by Uplift</div>
         </div>
 
         {/* Card */}

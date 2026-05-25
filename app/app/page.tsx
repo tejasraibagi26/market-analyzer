@@ -872,9 +872,9 @@ export default function Dashboard() {
         <div className="header-inner">
           <div className="header-left">
             <div>
-              <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>MARKET ANALYTICS</div>
+              <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>by Uplift</div>
               <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1rem,3vw,2rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff", whiteSpace: "nowrap" }}>
-                MARKET ANALYSIS
+                MARKT
               </h1>
             </div>
             <div className="header-tag hide-mobile" style={{ display: "flex", alignItems: "center" }}>

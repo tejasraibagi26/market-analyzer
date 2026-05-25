@@ -63,8 +63,11 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="nav-root" style={{ borderBottom: "1px solid #0f0f0f", position: "sticky", top: 0, background: "#050505e6", backdropFilter: "blur(12px)", zIndex: 10 }}>
         <div style={{ maxWidth: "960px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontFamily: bebas, fontSize: "1.3rem", letterSpacing: "4px", color: "#fff" }}>
-            MARKET<span style={{ color: "#00ff88" }}> ANALYTICS</span>
+          <div>
+            <div style={{ fontFamily: bebas, fontSize: "1.3rem", letterSpacing: "4px", color: "#fff" }}>
+              MARKT
+            </div>
+            <div style={{ fontSize: "0.52rem", color: "#00ff8866", letterSpacing: "3px", marginTop: "1px" }}>by Uplift</div>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <button className="nav-signin" onClick={() => router.push("/login")}
@@ -147,7 +150,7 @@ export default function LandingPage() {
             <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#ffaa00" }} />
             <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#00ff88" }} />
             <div style={{ flex: 1, height: "1px", background: "#111" }} />
-            <div style={{ fontSize: "0.62rem", color: "#1a1a1a", letterSpacing: "2px" }}>MARKET ANALYTICS</div>
+            <div style={{ fontSize: "0.62rem", color: "#1a1a1a", letterSpacing: "2px" }}>MARKT</div>
           </div>
           {/* Fake quote tiles */}
           <div style={{ padding: "20px", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "1px", background: "#111" }}>
