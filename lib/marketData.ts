@@ -10,10 +10,14 @@ export { DEFAULT_WATCHLIST } from "@/lib/constants";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const yahooFinance = new (YahooFinance as any)();
 
+function toYahooSymbol(symbol: string): string {
+  return symbol.replace(/\./g, "-");
+}
+
 export async function fetchQuotes(symbols: string[]): Promise<Quote[]> {
   const results = await Promise.allSettled(
     symbols.map((symbol) =>
-      yahooFinance.quoteSummary(symbol, {
+      yahooFinance.quoteSummary(toYahooSymbol(symbol), {
         modules: ["price", "summaryDetail", "defaultKeyStatistics"],
       })
     )
@@ -70,7 +74,7 @@ export async function fetchHistorical(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let result: any;
   try {
-    result = await yahooFinance.chart(symbol, {
+    result = await yahooFinance.chart(toYahooSymbol(symbol), {
       period1: new Date(Date.now() - daysMap[period] * 86400000),
       period2: new Date(),
       interval: "1d",

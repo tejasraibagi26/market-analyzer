@@ -799,7 +799,9 @@ export default function Dashboard() {
 
         /* 2-column layout: sidebar | market+analysis */
         .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
-        .sidebar { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 0; max-height: calc(100vh - 110px); overflow-y: auto; }
+        .sidebar { display: flex; flex-direction: column; gap: 0; position: sticky; top: 0; height: calc(100vh - 110px); }
+        .sidebar-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 14px; min-height: 0; }
+        .sidebar-footer { flex-shrink: 0; padding-top: 14px; }
         .analysis-col { display: none !important; }
 
         .quote-grid {
@@ -962,30 +964,34 @@ export default function Dashboard() {
         <div className="layout">
           {/* ── Desktop sidebar ── */}
           <aside className="sidebar">
-            <WatchlistInput items={items} onChange={newItems => { setItems(newItems); syncItems(newItems); setAnalysis(null); setMobileView("market"); if (newItems.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
-            {quotes.length > 0 && (
-              <div style={{ border: "1px solid #111", background: "#060606", padding: "14px 16px" }}>
-                <div style={{ fontSize: "0.6rem", color: "#2a2a2a", letterSpacing: "2px", marginBottom: "10px" }}>TOP MOVERS</div>
-                {gainers.map(q => (
-                  <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0a0a0a"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-                    <span style={{ fontSize: "0.75rem", color: "#666" }}>{q.symbol.replace(".TO", "")}</span>
-                    <span style={{ fontSize: "0.75rem", color: "#00ff88", fontWeight: "700" }}>+{q.changePercent.toFixed(2)}%</span>
-                  </div>
-                ))}
-                {gainers.length > 0 && losers.length > 0 && <div style={{ height: "1px", background: "#0d0d0d", margin: "4px 0" }} />}
-                {losers.map(q => (
-                  <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0a0a0a"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
-                    <span style={{ fontSize: "0.75rem", color: "#666" }}>{q.symbol.replace(".TO", "")}</span>
-                    <span style={{ fontSize: "0.75rem", color: "#ff4444", fontWeight: "700" }}>{q.changePercent.toFixed(2)}%</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
+            <div className="sidebar-scroll">
+              <WatchlistInput items={items} onChange={newItems => { setItems(newItems); syncItems(newItems); setAnalysis(null); setMobileView("market"); if (newItems.length === 0) setSelectedSymbol(""); }} onSchedule={() => setShowDigestSetup(true)} scheduleLabel={digestPrefs?.enabled ? digestPrefs.frequencyLabel : undefined} />
+              {quotes.length > 0 && (
+                <div style={{ border: "1px solid #111", background: "#060606", padding: "14px 16px" }}>
+                  <div style={{ fontSize: "0.6rem", color: "#2a2a2a", letterSpacing: "2px", marginBottom: "10px" }}>TOP MOVERS</div>
+                  {gainers.map(q => (
+                    <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0a0a0a"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                      <span style={{ fontSize: "0.75rem", color: "#666" }}>{q.symbol.replace(".TO", "")}</span>
+                      <span style={{ fontSize: "0.75rem", color: "#00ff88", fontWeight: "700" }}>+{q.changePercent.toFixed(2)}%</span>
+                    </div>
+                  ))}
+                  {gainers.length > 0 && losers.length > 0 && <div style={{ height: "1px", background: "#0d0d0d", margin: "4px 0" }} />}
+                  {losers.map(q => (
+                    <div key={q.symbol} onClick={() => setSelectedSymbol(q.symbol)} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #0a0a0a", cursor: "pointer" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0a0a0a"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                      <span style={{ fontSize: "0.75rem", color: "#666" }}>{q.symbol.replace(".TO", "")}</span>
+                      <span style={{ fontSize: "0.75rem", color: "#ff4444", fontWeight: "700" }}>{q.changePercent.toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="sidebar-footer">
+              <AnalyzeButton onClick={handleBtnClick} loading={loadingAnalysis} disabled={quotes.length === 0} />
+            </div>
           </aside>
 
           {/* ── Main content ── */}

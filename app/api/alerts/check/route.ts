@@ -81,10 +81,7 @@ export async function POST(request: NextRequest) {
       const crossed = isBelow
         ? quote.price <= item.targetPrice
         : quote.price >= item.targetPrice;
-      const nearBy = !crossed &&
-        Math.abs(quote.price - item.targetPrice) / item.targetPrice <= 0.02 &&
-        (isBelow ? quote.price > item.targetPrice : quote.price < item.targetPrice);
-      if (crossed || nearBy) {
+      if (crossed) {
         triggers.push({
           symbol: item.symbol,
           currentPrice: quote.price,

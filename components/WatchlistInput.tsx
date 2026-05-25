@@ -21,9 +21,16 @@ const QUICK_GROUPS = [
   { label: "TOP PICKS", symbols: TOP_PICKS },
 ];
 
+const PAGE_SIZE = 8;
+
 export default function WatchlistInput({ items, onChange, onSchedule, scheduleLabel }: Props) {
   const [input, setInput] = useState("");
+  const [page, setPage] = useState(0);
   const symbols = items.map((i) => i.symbol);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = items.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const add = (sym: string) => {
     const s = sym.trim().toUpperCase();
@@ -32,8 +39,8 @@ export default function WatchlistInput({ items, onChange, onSchedule, scheduleLa
 
   const addFromInput = () => { add(input); setInput(""); };
 
-  const remove = (sym: string) => onChange(items.filter(i => i.symbol !== sym));
-  const clear   = () => onChange([]);
+  const remove = (sym: string) => { onChange(items.filter(i => i.symbol !== sym)); setPage(0); };
+  const clear   = () => { onChange([]); setPage(0); };
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addFromInput(); }
@@ -112,17 +119,32 @@ export default function WatchlistInput({ items, onChange, onSchedule, scheduleLa
           No tickers added yet
         </div>
       ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {items.map(item => (
-            <span key={item.symbol} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 10px", border: "1px solid #1a1a1a", background: "#050505", fontSize: "0.75rem", color: "#999", fontFamily: "'Space Mono', monospace" }}>
-              {item.symbol}
-              {item.targetPrice != null && (
-                <span style={{ fontSize: "0.6rem", color: "#00ff8855", letterSpacing: "0.5px" }}>⊙</span>
-              )}
-              <button onClick={() => remove(item.symbol)} style={{ background: "transparent", border: "none", color: "#444", cursor: "pointer", fontSize: "1rem", padding: 0, lineHeight: 1 }}>×</button>
-            </span>
-          ))}
-        </div>
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {pageItems.map(item => (
+              <span key={item.symbol} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 10px", border: "1px solid #1a1a1a", background: "#050505", fontSize: "0.75rem", color: "#999", fontFamily: "'Space Mono', monospace" }}>
+                {item.symbol}
+                {item.targetPrice != null && (
+                  <span style={{ fontSize: "0.6rem", color: "#00ff8855", letterSpacing: "0.5px" }}>⊙</span>
+                )}
+                <button onClick={() => remove(item.symbol)} style={{ background: "transparent", border: "none", color: "#444", cursor: "pointer", fontSize: "1rem", padding: 0, lineHeight: 1 }}>×</button>
+              </span>
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px" }}>
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0}
+                style={{ background: "transparent", border: "1px solid #1a1a1a", color: safePage === 0 ? "#222" : "#555", fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", padding: "4px 10px", cursor: safePage === 0 ? "default" : "pointer", letterSpacing: "1px" }}>
+                ←
+              </button>
+              <span style={{ fontSize: "0.6rem", color: "#333", letterSpacing: "1px" }}>{safePage + 1} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage === totalPages - 1}
+                style={{ background: "transparent", border: "1px solid #1a1a1a", color: safePage === totalPages - 1 ? "#222" : "#555", fontFamily: "'Space Mono', monospace", fontSize: "0.65rem", padding: "4px 10px", cursor: safePage === totalPages - 1 ? "default" : "pointer", letterSpacing: "1px" }}>
+                →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
