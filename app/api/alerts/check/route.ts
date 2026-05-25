@@ -4,7 +4,7 @@ import { Receiver } from "@upstash/qstash";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { WatchlistItem } from "@/types/market";
 import { fetchQuotes } from "@/lib/marketData";
-import { sendEmailDigest } from "@/lib/emailService";
+import { sendAlertEmail } from "@/lib/emailService";
 import { buildAlertEmailHtml, type AlertTrigger } from "@/lib/alertEmailTemplate";
 
 function getServiceClient() {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     try {
       const html = buildAlertEmailHtml(triggers);
       const hitSymbols = triggers.map((t) => t.symbol).join(", ");
-      await sendEmailDigest({
+      await sendAlertEmail({
         to: email,
         subject: `Price alert: ${hitSymbols} hit target`,
         html,

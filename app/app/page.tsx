@@ -447,7 +447,6 @@ export default function Dashboard() {
   const [loadingQuotes, setLoadingQuotes] = useState(false);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [analysisStage, setAnalysisStage] = useState("");
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string>("");
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -535,7 +534,6 @@ export default function Dashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setQuotes(data.quotes);
-      setLastUpdated(data.lastUpdated);
 
       // Auto-correct symbols (e.g. XEQT → XEQT.TO)
       const resolved: Record<string, string> = data.resolved ?? {};
@@ -563,10 +561,7 @@ export default function Dashboard() {
             if (!q || item.targetPrice == null) return [];
             const isBelow = item.targetDirection === "below";
             const crossed = isBelow ? q.price <= item.targetPrice : q.price >= item.targetPrice;
-            const nearby = !crossed &&
-              Math.abs(q.price - item.targetPrice) / item.targetPrice <= 0.02 &&
-              (isBelow ? q.price > item.targetPrice : q.price < item.targetPrice);
-            if (crossed || nearby) return [{ symbol: item.symbol, currentPrice: q.price, targetPrice: item.targetPrice }];
+            if (crossed) return [{ symbol: item.symbol, currentPrice: q.price, targetPrice: item.targetPrice }];
             return [];
           });
         if (triggered.length > 0) {
@@ -872,17 +867,10 @@ export default function Dashboard() {
         <div className="header-inner">
           <div className="header-left">
             <div>
-              <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginBottom: "5px" }}>by Uplift</div>
               <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(1rem,3vw,2rem)", margin: 0, lineHeight: 1, letterSpacing: "4px", color: "#fff", whiteSpace: "nowrap" }}>
                 MARKT
               </h1>
-            </div>
-            <div className="header-tag hide-mobile" style={{ display: "flex", alignItems: "center" }}>
-              {lastUpdated && (
-                <span style={{ fontSize: "0.65rem", color: "#222", whiteSpace: "nowrap", borderLeft: "1px solid #111", paddingLeft: "12px" }}>
-                  {new Date(lastUpdated).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              )}
+              <div className="header-sub" style={{ fontSize: "0.6rem", color: "#00ff8866", letterSpacing: "3px", marginTop: "4px" }}>by Uplift</div>
             </div>
           </div>
           <div className="header-right">

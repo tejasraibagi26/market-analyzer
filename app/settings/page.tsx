@@ -138,10 +138,15 @@ export default function SettingsPage() {
               </div>
             )}
             <button onClick={signOut}
-              style={{ fontSize: "0.6rem", color: "#282828", background: "transparent", border: "none", padding: "4px 0", fontFamily: mono, letterSpacing: "1px", cursor: "pointer" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#555"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#282828"; }}>
-              sign out
+              title="Sign out"
+              style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "1px solid #1e1e1e", color: "#555", cursor: "pointer", borderRadius: "2px", flexShrink: 0, transition: "all 0.15s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#ff444440"; (e.currentTarget as HTMLElement).style.color = "#ff4444"; (e.currentTarget as HTMLElement).style.background = "#1a0000"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#1e1e1e"; (e.currentTarget as HTMLElement).style.color = "#555"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </button>
           </div>
         </div>
