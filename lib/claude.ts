@@ -71,7 +71,7 @@ export async function generateSuggestionsWithClaude(
 
   const message = await client.messages.create({
     model,
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{ role: "user", content: buildPrompt(assets) }],
   });
 
