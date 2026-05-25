@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import PlaidConnect from "@/components/PlaidConnect";
 
 const mono = "'Space Mono', monospace";
 const bebas = "'Bebas Neue', sans-serif";
@@ -245,6 +246,18 @@ export default function SettingsPage() {
               </button>
             </div>
           )}
+        </section>
+
+        <div style={divider} />
+
+        {/* Connected Accounts */}
+        <section>
+          <div style={sectionLabel}>◈ BROKERAGE</div>
+          <div style={sectionTitle}>CONNECTED ACCOUNTS</div>
+          <p style={{ fontSize: "0.75rem", color: "#333", lineHeight: 1.8, marginBottom: "20px" }}>
+            Connect a brokerage account via Plaid to automatically import your holdings into the watchlist.
+          </p>
+          <PlaidConnect onWatchlistImport={() => {}} />
         </section>
 
         <div style={divider} />
