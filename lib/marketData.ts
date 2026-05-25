@@ -10,17 +10,25 @@ export { DEFAULT_WATCHLIST } from "@/lib/constants";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const yahooFinance = new (YahooFinance as any)();
 
-function toYahooSymbol(symbol: string): string {
-  return symbol.replace(/\./g, "-");
+async function quoteSummaryWithFallback(symbol: string) {
+  try {
+    return await yahooFinance.quoteSummary(symbol, {
+      modules: ["price", "summaryDetail", "defaultKeyStatistics"],
+    });
+  } catch {
+    // Some tickers use dash instead of dot (e.g. BRK.B → BRK-B)
+    if (symbol.includes(".") && !symbol.endsWith(".TO")) {
+      return yahooFinance.quoteSummary(symbol.replace(/\./g, "-"), {
+        modules: ["price", "summaryDetail", "defaultKeyStatistics"],
+      });
+    }
+    throw new Error(`Quote not found for symbol: ${symbol}`);
+  }
 }
 
 export async function fetchQuotes(symbols: string[]): Promise<Quote[]> {
   const results = await Promise.allSettled(
-    symbols.map((symbol) =>
-      yahooFinance.quoteSummary(toYahooSymbol(symbol), {
-        modules: ["price", "summaryDetail", "defaultKeyStatistics"],
-      })
-    )
+    symbols.map((symbol) => quoteSummaryWithFallback(symbol))
   );
 
   const quotes: Quote[] = [];
@@ -74,7 +82,7 @@ export async function fetchHistorical(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let result: any;
   try {
-    result = await yahooFinance.chart(toYahooSymbol(symbol), {
+    result = await yahooFinance.chart(symbol, {
       period1: new Date(Date.now() - daysMap[period] * 86400000),
       period2: new Date(),
       interval: "1d",
