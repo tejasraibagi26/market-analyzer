@@ -183,7 +183,7 @@ export function buildEmailHtml({
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Market Analytics Digest</title>
+  <title>Markt by Uplift Digest</title>
   <style>* { -webkit-text-size-adjust: none; }</style>
 </head>
 <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
@@ -248,7 +248,7 @@ export function buildEmailHtml({
             <p style="font-size:${FS.xs};color:#bbb;font-family:Arial,sans-serif;line-height:1.8;margin:0;">
               This digest is for informational purposes only and does not constitute financial advice. Past performance is not indicative of future results. Data sourced from Yahoo Finance.
             </p>
-            <div style="margin-top:8px;font-size:${FS.xxs};color:#ccc;font-family:Arial,sans-serif;">Market Analytics &middot; ${new Date(generatedAt).toUTCString()}</div>
+            <div style="margin-top:8px;font-size:${FS.xxs};color:#ccc;font-family:Arial,sans-serif;">Markt by Uplift &middot; ${new Date(generatedAt).toUTCString()}</div>
           </td>
         </tr>
 

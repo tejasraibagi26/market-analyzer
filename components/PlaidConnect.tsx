@@ -195,7 +195,7 @@ export default function PlaidConnect({ onWatchlistImport }: Props) {
       {/* Help note */}
       <div style={{ fontSize: "0.62rem", color: "#1a1a1a", lineHeight: 1.7 }}>
         <span style={labelStyle}>◈ HOW IT WORKS</span>
-        Connect via Plaid to read your investment holdings. Market Analytics only reads equity/ETF tickers — we never see account numbers or initiate transactions.
+        Connect via Plaid to read your investment holdings. Markt by Uplift only reads equity/ETF tickers — we never see account numbers or initiate transactions.
       </div>
     </div>
   );

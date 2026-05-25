@@ -74,8 +74,8 @@ export async function POST() {
   const { data: job, error } = await admin
     .from("email_jobs")
     .insert({
-      name: "Market Analytics Price Alerts",
-      app_name: "Market Analytics",
+      name: "Markt by Uplift Price Alerts",
+      app_name: "Markt by Uplift",
       recipient: user.email,
       subject: "Price Alert Check",
       cron_expression: ALERT_CRON,

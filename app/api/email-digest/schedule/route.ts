@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
     const { data: job, error } = await admin
       .from("email_jobs")
       .insert({
-        name: "Market Analytics Digest",
-        app_name: "Market Analytics",
+        name: "Markt by Uplift Digest",
+        app_name: "Markt by Uplift",
         recipient: user.email,
-        subject: "Market Analytics — Scheduled Digest",
+        subject: "Markt by Uplift — Scheduled Digest",
         cron_expression: cronExpression,
         next_run_at: nextRunAt,
         metadata: {

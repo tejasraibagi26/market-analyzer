@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Market Analytics",
+  title: "Markt by Uplift",
   description: "AI-powered stock and ETF analysis dashboard",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],

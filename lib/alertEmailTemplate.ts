@@ -53,7 +53,7 @@ export function buildAlertEmailHtml(triggers: AlertTrigger[]): string {
         <!-- Header -->
         <tr>
           <td style="padding:32px 32px 24px;border-bottom:1px solid #e5e7eb;">
-            <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Market Analytics</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Markt by Uplift</div>
             <div style="font-family:'Courier New',Courier,monospace;font-size:24px;font-weight:700;color:#111827;letter-spacing:2px;">Price Alert</div>
             <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#6b7280;margin-top:8px;">
               ${triggers.length === 1 ? "A symbol" : `${triggers.length} symbols`} in your watchlist reached ${triggers.length === 1 ? "its" : "their"} target price.
@@ -81,7 +81,7 @@ export function buildAlertEmailHtml(triggers: AlertTrigger[]): string {
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #e5e7eb;">
             <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9ca3af;text-align:center;">
-              Market Analytics &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; Data from Yahoo Finance
+              Markt by Uplift &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; Data from Yahoo Finance
             </div>
           </td>
         </tr>
